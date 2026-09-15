@@ -1,0 +1,2657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<title>Домино — онлайн</title>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    background: #f3f0e8;
+    color: #252525;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    border: 0;
+    cursor: pointer;
+}
+
+.app {
+    min-height: 100vh;
+    max-width: 760px;
+    margin: auto;
+    padding: 16px;
+}
+
+.screen {
+    display: none;
+}
+
+.screen.active {
+    display: block;
+}
+
+/* ---------- HOME ---------- */
+
+.logo {
+    text-align: center;
+    margin: 30px 0 25px;
+}
+
+.logo .domino-icon {
+    font-size: 64px;
+}
+
+.logo h1 {
+    margin: 5px 0;
+    font-size: 34px;
+}
+
+.logo p {
+    color: #777;
+    margin: 0;
+}
+
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 5px 25px rgba(0,0,0,.08);
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    color: #777;
+    margin-bottom: 7px;
+}
+
+input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    outline: none;
+    background: #fafafa;
+}
+
+input:focus {
+    border-color: #333;
+}
+
+.btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 13px;
+    background: #252525;
+    color: white;
+    font-weight: 700;
+    margin-top: 10px;
+}
+
+.btn.secondary {
+    background: #e9e5dc;
+    color: #252525;
+}
+
+.btn:disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.room-code {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 7px;
+    margin: 10px 0;
+}
+
+/* ---------- LOBBY ---------- */
+
+.players {
+    display: grid;
+    gap: 8px;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #f5f3ed;
+    border-radius: 12px;
+}
+
+.player-name {
+    font-weight: 700;
+}
+
+.player-status {
+    font-size: 13px;
+    color: #777;
+}
+
+/* ---------- GAME ---------- */
+
+.game-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.game-title {
+    font-size: 21px;
+    font-weight: 800;
+}
+
+.round-info {
+    font-size: 13px;
+    color: #777;
+    text-align: right;
+}
+
+.scoreboard {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.score-player {
+    min-width: 110px;
+    background: white;
+    border-radius: 12px;
+    padding: 9px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+
+.score-player.active {
+    outline: 2px solid #252525;
+}
+
+.score-name {
+    font-weight: 700;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.score-number {
+    font-size: 21px;
+    font-weight: 800;
+}
+
+/* ---------- TABLE ---------- */
+
+.table {
+    background: #236b42;
+    border-radius: 22px;
+    min-height: 300px;
+    padding: 18px;
+    position: relative;
+    color: white;
+    overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(0,0,0,.15);
+}
+
+.table-message {
+    text-align: center;
+    font-size: 15px;
+    margin: 4px 0 16px;
+    min-height: 20px;
+}
+
+.trick {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    min-height: 120px;
+    flex-wrap: wrap;
+}
+
+.played {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.played-name {
+    font-size: 11px;
+    margin-bottom: 3px;
+    opacity: .9;
+}
+
+/* ---------- DOMINO ---------- */
+
+.domino {
+    width: 70px;
+    height: 38px;
+    background: #fff;
+    border-radius: 7px;
+    border: 2px solid #222;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    color: #111;
+    box-shadow: 0 3px 6px rgba(0,0,0,.2);
+}
+
+.domino.vertical {
+    width: 45px;
+    height: 76px;
+    flex-direction: column;
+}
+
+.domino-half {
+    flex: 1;
+    position: relative;
+}
+
+.domino.vertical .domino-half {
+    width: 100%;
+}
+
+.domino-half:first-child {
+    border-right: 1px solid #777;
+}
+
+.domino.vertical .domino-half:first-child {
+    border-right: 0;
+    border-bottom: 1px solid #777;
+}
+
+/* dots */
+
+.dot {
+    width: 7px;
+    height: 7px;
+    background: #111;
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+
+.p1 { left: 25%; top: 25%; }
+.p2 { left: 50%; top: 25%; }
+.p3 { left: 75%; top: 25%; }
+.p4 { left: 25%; top: 50%; }
+.p5 { left: 50%; top: 50%; }
+.p6 { left: 75%; top: 50%; }
+.p7 { left: 25%; top: 75%; }
+.p8 { left: 50%; top: 75%; }
+.p9 { left: 75%; top: 75%; }
+
+.hand {
+    background: white;
+    border-radius: 20px;
+    padding: 14px;
+    margin-top: 12px;
+}
+
+.hand-title {
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+
+.hand-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 5px 2px 8px;
+}
+
+.hand .domino {
+    flex: 0 0 auto;
+    width: 76px;
+    height: 42px;
+    transition: transform .1s;
+}
+
+.hand .domino:not(.disabled):active {
+    transform: translateY(-4px) scale(1.04);
+}
+
+.domino.disabled {
+    opacity: .45;
+    cursor: default;
+}
+
+.domino.playable {
+    box-shadow: 0 0 0 3px #e5b12b, 0 4px 10px rgba(0,0,0,.2);
+}
+
+/* ---------- BIDS ---------- */
+
+.bid-panel {
+    background: white;
+    border-radius: 18px;
+    padding: 16px;
+    margin-top: 12px;
+}
+
+.bid-title {
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.bid-buttons {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.bid-btn {
+    padding: 12px 4px;
+    border-radius: 9px;
+    background: #eeeae1;
+    font-weight: 800;
+}
+
+.bid-btn.selected {
+    background: #252525;
+    color: white;
+}
+
+.bid-btn:disabled {
+    opacity: .35;
+}
+
+.waiting {
+    text-align: center;
+    color: #777;
+    padding: 10px;
+}
+
+/* ---------- INFO ---------- */
+
+.info {
+    background: white;
+    border-radius: 16px;
+    padding: 15px;
+    margin-top: 12px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.info-row:last-child {
+    border-bottom: 0;
+}
+
+.small {
+    font-size: 12px;
+    color: #777;
+}
+
+/* ---------- RESULT ---------- */
+
+.result {
+    text-align: center;
+    padding: 25px 10px;
+}
+
+.result-trophy {
+    font-size: 65px;
+}
+
+.result h2 {
+    margin: 5px 0;
+}
+
+.result-score {
+    font-size: 30px;
+    font-weight: 800;
+}
+
+/* ---------- TOAST ---------- */
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    background: #222;
+    color: white;
+    padding: 12px 18px;
+    border-radius: 12px;
+    z-index: 1000;
+    max-width: calc(100% - 30px);
+    text-align: center;
+    display: none;
+}
+
+.toast.show {
+    display: block;
+}
+
+/* ---------- MOBILE ---------- */
+
+@media (max-width: 500px) {
+    .app {
+        padding: 10px;
+    }
+
+    .logo {
+        margin: 15px 0 20px;
+    }
+
+    .logo .domino-icon {
+        font-size: 52px;
+    }
+
+    .logo h1 {
+        font-size: 28px;
+    }
+
+    .table {
+        min-height: 270px;
+    }
+
+    .domino {
+        width: 62px;
+        height: 34px;
+    }
+
+    .domino.vertical {
+        width: 42px;
+        height: 70px;
+    }
+
+    .dot {
+        width: 6px;
+        height: 6px;
+    }
+
+    .bid-buttons {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- HOME -->
+
+    <section id="homeScreen" class="screen active">
+
+        <div class="logo">
+            <div class="domino-icon">🀄</div>
+            <h1>Домино</h1>
+            <p>Онлайн-игра</p>
+        </div>
+
+        <div class="card">
+
+            <label>Ваш ник</label>
+
+            <input
+                id="nickname"
+                maxlength="20"
+                placeholder="Например, Кирилл"
+                autocomplete="off"
+            >
+
+            <button class="btn" id="createBtn">
+                Создать игру
+            </button>
+
+            <button class="btn secondary" id="joinBtn">
+                Войти по коду
+            </button>
+
+        </div>
+
+        <div class="card" id="joinCard" style="display:none">
+
+            <label>Код комнаты</label>
+
+            <input
+                id="roomInput"
+                maxlength="6"
+                placeholder="Например, A7K2P"
+                autocomplete="off"
+                style="text-transform:uppercase"
+            >
+
+            <button class="btn" id="connectBtn">
+                Подключиться
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <!-- LOBBY -->
+
+    <section id="lobbyScreen" class="screen">
+
+        <div class="card">
+
+            <div class="small">Код комнаты</div>
+
+            <div class="room-code" id="roomCode"></div>
+
+            <button class="btn secondary" id="copyRoomBtn">
+                📋 Скопировать код
+            </button>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Игроки</h3>
+
+            <div class="players" id="playersList"></div>
+
+            <div class="waiting" id="lobbyStatus">
+                Ожидаем игроков...
+            </div>
+
+        </div>
+
+        <button class="btn secondary" id="leaveLobbyBtn">
+            Выйти
+        </button>
+
+    </section>
+
+
+    <!-- GAME -->
+
+    <section id="gameScreen" class="screen">
+
+        <div class="game-header">
+
+            <div class="game-title">
+                Домино
+            </div>
+
+            <div class="round-info" id="roundInfo">
+            </div>
+
+        </div>
+
+        <div class="scoreboard" id="scoreboard"></div>
+
+        <div class="table">
+
+            <div class="table-message" id="tableMessage"></div>
+
+            <div class="trick" id="trick"></div>
+
+        </div>
+
+        <div class="hand">
+
+            <div class="hand-title">
+                Мои кости
+            </div>
+
+            <div class="hand-list" id="myHand"></div>
+
+        </div>
+
+        <div id="bidArea"></div>
+
+        <div class="info" id="roundInfoPanel"></div>
+
+    </section>
+
+
+    <!-- RESULT -->
+
+    <section id="resultScreen" class="screen">
+
+        <div class="card result">
+
+            <div class="result-trophy">🏆</div>
+
+            <h2 id="winnerTitle"></h2>
+
+            <div class="result-score" id="winnerScore"></div>
+
+        </div>
+
+        <div class="card">
+
+            <h3>Итоговый счёт</h3>
+
+            <div id="finalScores"></div>
+
+        </div>
+
+        <button class="btn" id="newGameBtn">
+            Новая игра
+        </button>
+
+    </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+
+/*
+    ============================================================
+    DOMINO ONLINE — ОДИН HTML-ФАЙЛ
+    ============================================================
+
+    Интернет-соединение:
+    PeerJS.
+
+    Один игрок является HOST.
+    HOST хранит состояние игры и раздаёт его остальным.
+
+    Важно:
+    если HOST закроет страницу, текущая игра закончится.
+    Для простой версии это нормально.
+*/
+
+
+// ------------------------------------------------------------
+// DOM
+// ------------------------------------------------------------
+
+const $ = id => document.getElementById(id);
+
+const homeScreen = $("homeScreen");
+const lobbyScreen = $("lobbyScreen");
+const gameScreen = $("gameScreen");
+const resultScreen = $("resultScreen");
+
+const nicknameInput = $("nickname");
+const roomInput = $("roomInput");
+
+
+// ------------------------------------------------------------
+// LOCAL STORAGE
+// ------------------------------------------------------------
+
+const savedNick = localStorage.getItem("domino_nickname");
+
+if (savedNick) {
+    nicknameInput.value = savedNick;
+}
+
+
+// ------------------------------------------------------------
+// STATE
+// ------------------------------------------------------------
+
+let peer = null;
+let isHost = false;
+let roomCode = null;
+let myId = null;
+let myPlayerIndex = -1;
+
+let connections = {};
+
+let game = null;
+
+
+// ------------------------------------------------------------
+// UTILS
+// ------------------------------------------------------------
+
+function showScreen(screen) {
+
+    [homeScreen, lobbyScreen, gameScreen, resultScreen]
+        .forEach(s => s.classList.remove("active"));
+
+    screen.classList.add("active");
+}
+
+
+function toast(message) {
+
+    const el = $("toast");
+
+    el.textContent = message;
+    el.classList.add("show");
+
+    clearTimeout(window.__toastTimer);
+
+    window.__toastTimer = setTimeout(() => {
+        el.classList.remove("show");
+    }, 2500);
+}
+
+
+function normalizeNick() {
+
+    const nick = nicknameInput.value.trim();
+
+    if (!nick) {
+        toast("Введите ник");
+        return null;
+    }
+
+    localStorage.setItem("domino_nickname", nick);
+
+    return nick;
+}
+
+
+function randomRoomCode() {
+
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    let result = "";
+
+    for (let i = 0; i < 5; i++) {
+        result += chars[Math.floor(Math.random() * chars.length)];
+    }
+
+    return result;
+}
+
+
+function shuffle(array) {
+
+    const a = [...array];
+
+    for (let i = a.length - 1; i > 0; i--) {
+
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+
+    return a;
+}
+
+
+// ------------------------------------------------------------
+// DOMINO
+// ------------------------------------------------------------
+
+function createDeck() {
+
+    const deck = [];
+
+    for (let a = 0; a <= 6; a++) {
+
+        for (let b = a; b <= 6; b++) {
+
+            deck.push({
+                a,
+                b,
+                id: `${a}-${b}`
+            });
+
+        }
+    }
+
+    return deck;
+}
+
+
+function isTrump(tile) {
+
+    return tile.a === tile.b;
+}
+
+
+/*
+    Сила козырей:
+
+    1-1
+    2-2
+    3-3
+    4-4
+    5-5
+    6-6
+    0-0
+
+    По условию 1-1 сильнее 2-2 и т.д.
+*/
+
+function trumpRank(tile) {
+
+    if (!isTrump(tile)) return -1;
+
+    if (tile.a === 1) return 7;
+    if (tile.a === 2) return 6;
+    if (tile.a === 3) return 5;
+    if (tile.a === 4) return 4;
+    if (tile.a === 5) return 3;
+    if (tile.a === 6) return 2;
+    return 1;
+}
+
+
+function tileStrength(tile) {
+
+    if (isTrump(tile)) {
+
+        return {
+            trump: true,
+            strength: trumpRank(tile)
+        };
+
+    }
+
+    return {
+        trump: false,
+        strength: tile.a + tile.b
+    };
+}
+
+
+/*
+    Определяет победителя взятки.
+
+    Важно:
+    если суммы некозырных костей одинаковы,
+    выигрывает тот, кто выложил раньше.
+
+    Поэтому если tile равен текущему победителю,
+    новый игрок НЕ заменяет его.
+*/
+
+function compareTiles(newTile, oldTile) {
+
+    const n = tileStrength(newTile);
+    const o = tileStrength(oldTile);
+
+    if (n.trump && !o.trump) return 1;
+
+    if (!n.trump && o.trump) return -1;
+
+    if (n.trump && o.trump) {
+
+        return n.strength > o.strength ? 1 : -1;
+    }
+
+    if (n.strength > o.strength) return 1;
+
+    return -1;
+}
+
+
+// ------------------------------------------------------------
+// DOMINO HTML
+// ------------------------------------------------------------
+
+function dotsForNumber(number) {
+
+    const positions = {
+
+        0: [],
+        1: [5],
+        2: [1, 9],
+        3: [1, 5, 9],
+        4: [1, 3, 7, 9],
+        5: [1, 3, 5, 7, 9],
+        6: [1, 3, 4, 6, 7, 9]
+
+    };
+
+    return positions[number]
+        .map(p => `<span class="dot p${p}"></span>`)
+        .join("");
+}
+
+
+function dominoHTML(tile, vertical = false, extraClass = "") {
+
+    return `
+        <div class="domino ${vertical ? "vertical" : ""} ${extraClass}">
+            <div class="domino-half">
+                ${dotsForNumber(tile.a)}
+            </div>
+            <div class="domino-half">
+                ${dotsForNumber(tile.b)}
+            </div>
+        </div>
+    `;
+}
+
+
+// ------------------------------------------------------------
+// NETWORK
+// ------------------------------------------------------------
+
+function createHost() {
+
+    const nick = normalizeNick();
+
+    if (!nick) return;
+
+    isHost = true;
+
+    roomCode = randomRoomCode();
+
+    /*
+        Используем код комнаты как Peer ID.
+
+        Это позволяет другому игроку подключиться,
+        зная только код.
+    */
+
+    peer = new Peer("domino-" + roomCode);
+
+    peer.on("open", id => {
+
+        myId = id;
+
+        createGame(nick);
+
+        showLobby();
+
+    });
+
+    peer.on("connection", conn => {
+
+        setupConnection(conn);
+
+    });
+
+    peer.on("error", err => {
+
+        console.error(err);
+
+        if (err.type === "unavailable-id") {
+
+            peer.destroy();
+
+            isHost = false;
+
+            setTimeout(createHost, 100);
+
+        } else {
+
+            toast("Ошибка соединения");
+
+        }
+
+    });
+}
+
+
+function joinRoom() {
+
+    const nick = normalizeNick();
+
+    if (!nick) return;
+
+    const code = roomInput.value
+        .trim()
+        .toUpperCase();
+
+    if (!/^[A-Z0-9]{4,6}$/.test(code)) {
+
+        toast("Неверный код комнаты");
+
+        return;
+    }
+
+    isHost = false;
+    roomCode = code;
+
+    peer = new Peer();
+
+    peer.on("open", id => {
+
+        myId = id;
+
+        const conn = peer.connect(
+            "domino-" + roomCode,
+            {
+                reliable: true
+            }
+        );
+
+        setupConnection(conn);
+
+        conn.on("open", () => {
+
+            conn.send({
+                type: "join",
+                nick
+            });
+
+            showLobby();
+
+        });
+
+    });
+
+    peer.on("error", err => {
+
+        console.error(err);
+
+        toast("Не удалось подключиться к комнате");
+
+    });
+}
+
+
+function setupConnection(conn) {
+
+    connections[conn.peer] = conn;
+
+    conn.on("data", message => {
+
+        handleMessage(message, conn);
+
+    });
+
+    conn.on("close", () => {
+
+        delete connections[conn.peer];
+
+        if (isHost) {
+
+            const player = game?.players
+                ?.find(p => p.id === conn.peer);
+
+            if (player) {
+
+                player.connected = false;
+
+                broadcastState();
+                render();
+
+            }
+
+        }
+
+    });
+
+    conn.on("error", err => {
+
+        console.error(err);
+
+    });
+}
+
+
+function sendTo(conn, message) {
+
+    if (!conn) return;
+
+    try {
+
+        if (conn.open) {
+            conn.send(message);
+        }
+
+    } catch (e) {
+
+        console.error(e);
+
+    }
+}
+
+
+function broadcast(message) {
+
+    Object.values(connections)
+        .forEach(conn => sendTo(conn, message));
+
+}
+
+
+function broadcastState() {
+
+    if (!isHost) return;
+
+    broadcast({
+        type: "state",
+        game: publicGameState()
+    });
+
+    render();
+}
+
+
+function publicGameState() {
+
+    /*
+        Не отправляем чужие кости.
+
+        Каждому игроку сервер отправляет
+        его собственную руку отдельно.
+    */
+
+    const publicPlayers = game.players.map(p => ({
+        id: p.id,
+        nick: p.nick,
+        score: p.score,
+        roundScore: p.roundScore,
+        bid: p.bid,
+        tricks: p.tricks,
+        connected: p.connected,
+        handCount: p.hand.length
+    }));
+
+    return {
+        players: publicPlayers,
+        roundIndex: game.roundIndex,
+        roundTotal: game.roundTotal,
+        phase: game.phase,
+        dealerStart: game.dealerStart,
+        firstBidder: game.firstBidder,
+        currentPlayer: game.currentPlayer,
+        trick: game.trick,
+        trickNumber: game.trickNumber,
+        lastTrickWinner: game.lastTrickWinner,
+        winner: game.winner
+    };
+}
+
+
+function sendPersonalState() {
+
+    if (!isHost) return;
+
+    game.players.forEach(player => {
+
+        const conn = connections[player.id];
+
+        if (!conn) return;
+
+        sendTo(conn, {
+            type: "personal",
+            hand: player.hand
+        });
+
+    });
+}
+
+
+function sendFullState() {
+
+    broadcastState();
+    sendPersonalState();
+
+    /*
+        Хост сам не получает сообщения через сеть,
+        поэтому его render вызывается напрямую.
+    */
+
+    render();
+}
+
+
+// ------------------------------------------------------------
+// NETWORK MESSAGES
+// ------------------------------------------------------------
+
+function handleMessage(message, conn) {
+
+    if (!message || !message.type) return;
+
+
+    // --------------------------------------------------------
+    // HOST: новый игрок
+    // --------------------------------------------------------
+
+    if (isHost && message.type === "join") {
+
+        const nick = String(message.nick || "")
+            .trim()
+            .slice(0, 20);
+
+        if (!nick) return;
+
+        if (game.players.length >= 4) {
+
+            sendTo(conn, {
+                type: "error",
+                message: "Комната уже заполнена"
+            });
+
+            return;
+        }
+
+        if (game.players.some(p => p.id === conn.peer)) {
+            return;
+        }
+
+        game.players.push({
+
+            id: conn.peer,
+            nick,
+            score: 0,
+            roundScore: 0,
+            bid: null,
+            tricks: 0,
+            hand: [],
+            connected: true
+
+        });
+
+        sendFullState();
+
+        showLobby();
+
+        /*
+            Игра автоматически начинается,
+            когда есть минимум 2 игрока.
+
+            Даём несколько секунд присоединиться
+            третьему/четвёртому.
+        */
+
+        if (game.players.length >= 2 && !game.startTimer) {
+
+            game.startTimer = setTimeout(() => {
+
+                if (
+                    game.players.length >= 2 &&
+                    game.phase === "lobby"
+                ) {
+
+                    startRound();
+
+                }
+
+            }, 4000);
+
+        }
+
+        return;
+    }
+
+
+    // --------------------------------------------------------
+    // PLAYER: state
+    // --------------------------------------------------------
+
+    if (!isHost && message.type === "state") {
+
+        game = mergePublicState(message.game);
+
+        render();
+
+        return;
+    }
+
+
+    if (!isHost && message.type === "personal") {
+
+        if (!game) game = {};
+
+        game.myHand = message.hand || [];
+
+        render();
+
+        return;
+    }
+
+
+    if (!isHost && message.type === "error") {
+
+        toast(message.message);
+
+        return;
+    }
+
+
+    // --------------------------------------------------------
+    // HOST: bid
+    // --------------------------------------------------------
+
+    if (isHost && message.type === "bid") {
+
+        hostReceiveBid(
+            conn.peer,
+            Number(message.value)
+        );
+
+        return;
+    }
+
+
+    // --------------------------------------------------------
+    // HOST: play
+    // --------------------------------------------------------
+
+    if (isHost && message.type === "play") {
+
+        hostReceivePlay(
+            conn.peer,
+            String(message.tileId)
+        );
+
+        return;
+    }
+}
+
+
+function mergePublicState(publicState) {
+
+    return {
+        ...publicState,
+        myHand: game?.myHand || []
+    };
+}
+
+
+// ------------------------------------------------------------
+// GAME CREATION
+// ------------------------------------------------------------
+
+function createGame(hostNick) {
+
+    game = {
+
+        players: [{
+
+            id: myId,
+            nick: hostNick,
+            score: 0,
+            roundScore: 0,
+            bid: null,
+            tricks: 0,
+            hand: [],
+            connected: true
+
+        }],
+
+        roundIndex: -1,
+
+        /*
+            -1 = lobby
+            0... = rounds
+        */
+
+        roundTotal: 0,
+
+        phase: "lobby",
+
+        dealerStart: 0,
+
+        firstBidder: 0,
+
+        currentPlayer: 0,
+
+        trick: [],
+
+        trickNumber: 0,
+
+        lastTrickWinner: null,
+
+        winner: null,
+
+        startTimer: null
+
+    };
+}
+
+
+// ------------------------------------------------------------
+// ROUND STRUCTURE
+// ------------------------------------------------------------
+
+function getRoundSizes(playerCount) {
+
+    const sizes = [];
+
+    // Подъём
+    for (let i = 1; i <= 5; i++) {
+        sizes.push(i);
+    }
+
+    // Плато
+    for (let i = 0; i < playerCount; i++) {
+        sizes.push(6);
+    }
+
+    // Спуск
+    for (let i = 5; i >= 1; i--) {
+        sizes.push(i);
+    }
+
+    // Финал
+    sizes.push(6);
+
+    return sizes;
+}
+
+
+function getRoundCount() {
+
+    return getRoundSizes(game.players.length).length;
+}
+
+
+// ------------------------------------------------------------
+// START ROUND
+// ------------------------------------------------------------
+
+function startRound() {
+
+    if (!isHost) return;
+
+    const playerCount = game.players.length;
+
+    if (playerCount < 2 || playerCount > 4) {
+        return;
+    }
+
+    if (game.startTimer) {
+
+        clearTimeout(game.startTimer);
+
+        game.startTimer = null;
+    }
+
+    game.roundIndex++;
+
+    const sizes = getRoundSizes(playerCount);
+
+    game.roundTotal = sizes.length;
+
+    if (game.roundIndex >= game.roundTotal) {
+
+        finishCycle();
+
+        return;
+    }
+
+    const handSize = sizes[game.roundIndex];
+
+    /*
+        Право первой заявки:
+
+        в первом коне игрок №1,
+        затем по кругу.
+    */
+
+    game.firstBidder =
+        game.roundIndex % playerCount;
+
+    game.dealerStart = game.firstBidder;
+
+    game.currentPlayer = game.firstBidder;
+
+    game.trick = [];
+
+    game.trickNumber = 0;
+
+    game.lastTrickWinner = null;
+
+    game.players.forEach(p => {
+
+        p.bid = null;
+        p.tricks = 0;
+        p.roundScore = 0;
+
+    });
+
+    const deck = shuffle(createDeck());
+
+    game.players.forEach(player => {
+
+        player.hand = deck.splice(0, handSize);
+
+    });
+
+    game.phase = "bidding";
+
+    sendFullState();
+
+    toast(`Кон ${game.roundIndex + 1}: по ${handSize} кост${handSize === 1 ? "и" : "ей"}`);
+}
+
+
+// ------------------------------------------------------------
+// BIDDING
+// ------------------------------------------------------------
+
+function allBidsMade() {
+
+    return game.players.every(
+        p => p.bid !== null
+    );
+}
+
+
+function hostReceiveBid(playerId, value) {
+
+    if (!isHost) return;
+
+    if (game.phase !== "bidding") return;
+
+    const player = game.players
+        .find(p => p.id === playerId);
+
+    if (!player) return;
+
+    const index = game.players.indexOf(player);
+
+    /*
+        Только игрок, который сейчас должен заявлять,
+        имеет право отправить ставку.
+    */
+
+    if (index !== game.currentPlayer) {
+
+        return;
+    }
+
+    const max = player.hand.length;
+
+    value = Math.floor(Number(value));
+
+    if (!Number.isFinite(value)) return;
+
+    if (value < 0 || value > max) return;
+
+    player.bid = value;
+
+    /*
+        Следующая заявка по кругу.
+    */
+
+    game.currentPlayer =
+        (game.currentPlayer + 1)
+        % game.players.length;
+
+    if (allBidsMade()) {
+
+        startTrickPlay();
+
+    }
+
+    sendFullState();
+}
+
+
+// ------------------------------------------------------------
+// START PLAY
+// ------------------------------------------------------------
+
+function startTrickPlay() {
+
+    game.phase = "playing";
+
+    game.trick = [];
+
+    game.trickNumber = 0;
+
+    game.currentPlayer = game.firstBidder;
+
+    game.lastTrickWinner = null;
+
+    sendFullState();
+
+}
+
+
+// ------------------------------------------------------------
+// PLAY TILE
+// ------------------------------------------------------------
+
+function hostReceivePlay(playerId, tileId) {
+
+    if (!isHost) return;
+
+    if (game.phase !== "playing") return;
+
+    const playerIndex = game.players
+        .findIndex(p => p.id === playerId);
+
+    if (playerIndex === -1) return;
+
+    if (playerIndex !== game.currentPlayer) {
+        return;
+    }
+
+    const player = game.players[playerIndex];
+
+    const tileIndex = player.hand
+        .findIndex(t => t.id === tileId);
+
+    if (tileIndex === -1) return;
+
+    const tile = player.hand[tileIndex];
+
+    player.hand.splice(tileIndex, 1);
+
+    game.trick.push({
+
+        playerIndex,
+        playerId,
+        tile
+
+    });
+
+    /*
+        Пока не все сыграли —
+        просто передаём ход следующему.
+    */
+
+    if (game.trick.length < game.players.length) {
+
+        game.currentPlayer =
+            (game.currentPlayer + 1)
+            % game.players.length;
+
+        sendFullState();
+
+        return;
+    }
+
+    /*
+        Все сыграли.
+
+        Определяем победителя.
+    */
+
+    resolveTrick();
+}
+
+
+// ------------------------------------------------------------
+// RESOLVE TRICK
+// ------------------------------------------------------------
+
+function resolveTrick() {
+
+    let winner = game.trick[0];
+
+    for (let i = 1; i < game.trick.length; i++) {
+
+        const candidate = game.trick[i];
+
+        if (
+            compareTiles(
+                candidate.tile,
+                winner.tile
+            ) > 0
+        ) {
+
+            winner = candidate;
+        }
+    }
+
+    const winnerPlayer =
+        game.players[winner.playerIndex];
+
+    winnerPlayer.tricks++;
+
+    game.lastTrickWinner =
+        winner.playerIndex;
+
+    game.currentPlayer =
+        winner.playerIndex;
+
+    game.trickNumber++;
+
+    /*
+        На короткое время показываем результат
+        взятки, затем продолжаем.
+    */
+
+    game.phase = "trickResult";
+
+    sendFullState();
+
+    setTimeout(() => {
+
+        if (!game) return;
+
+        if (game.phase !== "trickResult") return;
+
+        if (game.players[0].hand.length === 0) {
+
+            finishRound();
+
+        } else {
+
+            game.trick = [];
+
+            game.phase = "playing";
+
+            sendFullState();
+
+        }
+
+    }, 1300);
+}
+
+
+// ------------------------------------------------------------
+// ROUND SCORING
+// ------------------------------------------------------------
+
+function calculateRoundScore(player) {
+
+    const bid = player.bid;
+    const tricks = player.tricks;
+
+    if (bid === 0 && tricks === 0) {
+
+        return 5;
+    }
+
+    if (bid > 0 && tricks === bid) {
+
+        return 10 * bid;
+    }
+
+    if (tricks > bid) {
+
+        /*
+            Перебор:
+            M = фактически взято.
+        */
+
+        return tricks;
+    }
+
+    /*
+        Недобор:
+        штраф за весь заявленный объём.
+    */
+
+    return -10 * bid;
+}
+
+
+function finishRound() {
+
+    game.phase = "roundResult";
+
+    game.players.forEach(player => {
+
+        player.roundScore =
+            calculateRoundScore(player);
+
+        player.score += player.roundScore;
+
+    });
+
+    sendFullState();
+
+    /*
+        Показываем результат кона.
+    */
+
+    setTimeout(() => {
+
+        if (!game) return;
+
+        /*
+            Проверяем, закончился ли цикл.
+        */
+
+        if (
+            game.roundIndex + 1
+            >= game.roundTotal
+        ) {
+
+            finishCycle();
+
+        } else {
+
+            startRound();
+
+        }
+
+    }, 2200);
+}
+
+
+// ------------------------------------------------------------
+// CYCLE END
+// ------------------------------------------------------------
+
+function finishCycle() {
+
+    const maxScore =
+        Math.max(
+            ...game.players.map(p => p.score)
+        );
+
+    const leaders =
+        game.players.filter(
+            p => p.score === maxScore
+        );
+
+    if (leaders.length === 1) {
+
+        game.winner = leaders[0].id;
+
+        game.phase = "finished";
+
+        sendFullState();
+
+        return;
+    }
+
+    /*
+        Ничья.
+
+        По правилам:
+        дополнительный кон на 6 костей.
+
+        Право первой заявки переходит
+        следующему игроку по кругу.
+    */
+
+    game.roundIndex++;
+
+    game.roundTotal =
+        game.roundIndex + 1;
+
+    /*
+        Для дополнительного кона
+        просто раздаём 6 костей.
+    */
+
+    const deck = shuffle(createDeck());
+
+    game.players.forEach(p => {
+
+        p.hand = deck.splice(0, 6);
+
+        p.bid = null;
+        p.tricks = 0;
+        p.roundScore = 0;
+
+    });
+
+    game.firstBidder =
+        (game.roundIndex - 1)
+        % game.players.length;
+
+    game.currentPlayer =
+        game.firstBidder;
+
+    game.trick = [];
+
+    game.trickNumber = 0;
+
+    game.phase = "bidding";
+
+    sendFullState();
+
+    toast("Ничья! Дополнительный кон на 6 костей.");
+}
+
+
+// ------------------------------------------------------------
+// UI
+// ------------------------------------------------------------
+
+function showLobby() {
+
+    showScreen(lobbyScreen);
+
+    $("roomCode").textContent =
+        roomCode;
+
+    renderLobby();
+}
+
+
+function renderLobby() {
+
+    if (!game) return;
+
+    const list = $("playersList");
+
+    list.innerHTML = "";
+
+    game.players.forEach((player, index) => {
+
+        const div = document.createElement("div");
+
+        div.className = "player";
+
+        div.innerHTML = `
+            <div>
+                <div class="player-name">
+                    ${escapeHTML(player.nick)}
+                    ${index === 0 ? " 👑" : ""}
+                </div>
+                <div class="player-status">
+                    ${player.connected === false
+                        ? "Отключён"
+                        : "В сети"}
+                </div>
+            </div>
+
+            <div>
+                ${index + 1}
+            </div>
+        `;
+
+        list.appendChild(div);
+
+    });
+
+    $("lobbyStatus").textContent =
+        game.players.length < 2
+            ? "Ожидаем второго игрока..."
+            : "Игра начнётся автоматически...";
+}
+
+
+function render() {
+
+    if (!game) return;
+
+    if (game.phase === "lobby") {
+
+        showLobby();
+
+        return;
+    }
+
+    if (game.phase === "finished") {
+
+        renderResult();
+
+        return;
+    }
+
+    showScreen(gameScreen);
+
+    renderGame();
+
+}
+
+
+function renderGame() {
+
+    const sizes =
+        getRoundSizes(game.players.length);
+
+    const handSize =
+        sizes[game.roundIndex]
+        || 6;
+
+    $("roundInfo").innerHTML = `
+        Кон ${game.roundIndex + 1}
+        / ${game.roundTotal}
+        <br>
+        по ${handSize} кост${handSize === 1 ? "ь" : "ей"}
+    `;
+
+    renderScoreboard();
+
+    renderTable();
+
+    renderHand();
+
+    renderBidArea();
+
+    renderRoundPanel();
+}
+
+
+// ------------------------------------------------------------
+// SCOREBOARD
+// ------------------------------------------------------------
+
+function renderScoreboard() {
+
+    const board = $("scoreboard");
+
+    board.innerHTML = "";
+
+    game.players.forEach((p, index) => {
+
+        const active =
+            game.currentPlayer === index;
+
+        board.innerHTML += `
+            <div class="score-player ${active ? "active" : ""}">
+                <div class="score-name">
+                    ${escapeHTML(p.nick)}
+                </div>
+
+                <div class="score-number">
+                    ${p.score}
+                </div>
+
+                <div class="small">
+                    ${p.tricks} взят.
+                </div>
+            </div>
+        `;
+
+    });
+}
+
+
+// ------------------------------------------------------------
+// TABLE
+// ------------------------------------------------------------
+
+function renderTable() {
+
+    const message = $("tableMessage");
+
+    const trick = $("trick");
+
+    trick.innerHTML = "";
+
+    if (game.phase === "bidding") {
+
+        const p = game.players[game.currentPlayer];
+
+        message.textContent =
+            `Заявка: ход игрока ${p.nick}`;
+
+    }
+
+    else if (
+        game.phase === "playing" ||
+        game.phase === "trickResult"
+    ) {
+
+        const p =
+            game.players[game.currentPlayer];
+
+        if (game.phase === "trickResult") {
+
+            const winner =
+                game.players[game.lastTrickWinner];
+
+            message.textContent =
+                `Взятку забирает ${winner.nick}`;
+
+        } else {
+
+            message.textContent =
+                `Ход: ${p.nick}`;
+
+        }
+
+    }
+
+    else if (game.phase === "roundResult") {
+
+        message.textContent =
+            "Кон завершён";
+
+    }
+
+
+    game.trick.forEach(item => {
+
+        const player =
+            game.players[item.playerIndex];
+
+        const div =
+            document.createElement("div");
+
+        div.className = "played";
+
+        div.innerHTML = `
+            <div class="played-name">
+                ${escapeHTML(player.nick)}
+            </div>
+
+            ${dominoHTML(item.tile, true)}
+        `;
+
+        trick.appendChild(div);
+
+    });
+
+}
+
+
+// ------------------------------------------------------------
+// HAND
+// ------------------------------------------------------------
+
+function renderHand() {
+
+    const container = $("myHand");
+
+    container.innerHTML = "";
+
+    const hand =
+        isHost
+            ? (
+                game.players.find(
+                    p => p.id === myId
+                )?.hand || []
+            )
+            : (
+                game.myHand || []
+            );
+
+    hand.forEach(tile => {
+
+        const wrapper =
+            document.createElement("div");
+
+        const isMyTurn =
+            game.phase === "playing" &&
+            game.players[game.currentPlayer]?.id === myId;
+
+        const disabled =
+            !isMyTurn ||
+            game.phase !== "playing";
+
+        wrapper.innerHTML =
+            dominoHTML(
+                tile,
+                false,
+                disabled ? "disabled" : "playable"
+            );
+
+        const domino =
+            wrapper.firstElementChild;
+
+        if (!disabled) {
+
+            domino.addEventListener(
+                "click",
+                () => playTile(tile.id)
+            );
+
+        }
+
+        container.appendChild(domino);
+
+    });
+}
+
+
+// ------------------------------------------------------------
+// BIDDING UI
+// ------------------------------------------------------------
+
+function renderBidArea() {
+
+    const area = $("bidArea");
+
+    area.innerHTML = "";
+
+    if (game.phase !== "bidding") {
+
+        if (game.phase === "playing") {
+
+            area.innerHTML = `
+                <div class="info">
+                    <div class="info-row">
+                        <span>Заявки</span>
+                        <strong>сделаны</strong>
+                    </div>
+                </div>
+            `;
+
+        }
+
+        return;
+    }
+
+    const me =
+        game.players.find(
+            p => p.id === myId
+        );
+
+    if (!me) return;
+
+    const myTurn =
+        game.players[game.currentPlayer]?.id
+        === myId;
+
+    if (!myTurn) {
+
+        area.innerHTML = `
+            <div class="bid-panel">
+                <div class="waiting">
+                    Сейчас заявляет:
+                    <strong>
+                        ${escapeHTML(
+                            game.players[
+                                game.currentPlayer
+                            ].nick
+                        )}
+                    </strong>
+                </div>
+            </div>
+        `;
+
+        return;
+    }
+
+    const count =
+        isHost
+            ? me.hand.length
+            : (game.myHand || []).length;
+
+    let buttons = "";
+
+    for (let i = 0; i <= count; i++) {
+
+        buttons += `
+            <button
+                class="bid-btn"
+                onclick="makeBid(${i})"
+            >
+                ${i}
+            </button>
+        `;
+
+    }
+
+    area.innerHTML = `
+        <div class="bid-panel">
+
+            <div class="bid-title">
+                Ваша заявка
+            </div>
+
+            <div class="small" style="text-align:center;margin-bottom:10px">
+                От 0 до ${count} взяток
+            </div>
+
+            <div class="bid-buttons">
+                ${buttons}
+            </div>
+
+        </div>
+    `;
+}
+
+
+// ------------------------------------------------------------
+// ROUND PANEL
+// ------------------------------------------------------------
+
+function renderRoundPanel() {
+
+    const panel = $("roundInfoPanel");
+
+    if (
+        game.phase !== "bidding" &&
+        game.phase !== "playing" &&
+        game.phase !== "trickResult"
+    ) {
+
+        panel.innerHTML = "";
+
+        return;
+    }
+
+    let html = "";
+
+    game.players.forEach(p => {
+
+        html += `
+            <div class="info-row">
+                <span>
+                    ${escapeHTML(p.nick)}
+                </span>
+
+                <span>
+                    ${p.bid === null
+                        ? "—"
+                        : "Заявка: " + p.bid}
+
+                    &nbsp;&nbsp;
+
+                    Взятки: ${p.tricks}
+                </span>
+            </div>
+        `;
+
+    });
+
+    panel.innerHTML = html;
+}
+
+
+// ------------------------------------------------------------
+// BID
+// ------------------------------------------------------------
+
+window.makeBid = function(value) {
+
+    if (!game) return;
+
+    if (game.phase !== "bidding") return;
+
+    if (
+        game.players[game.currentPlayer]?.id
+        !== myId
+    ) {
+
+        return;
+    }
+
+    value = Number(value);
+
+    if (isHost) {
+
+        hostReceiveBid(myId, value);
+
+    } else {
+
+        const conn =
+            Object.values(connections)[0];
+
+        if (!conn) {
+
+            toast("Нет соединения");
+
+            return;
+        }
+
+        sendTo(conn, {
+            type: "bid",
+            value
+        });
+
+    }
+};
+
+
+// ------------------------------------------------------------
+// PLAY
+// ------------------------------------------------------------
+
+function playTile(tileId) {
+
+    if (!game) return;
+
+    if (game.phase !== "playing") return;
+
+    if (
+        game.players[game.currentPlayer]?.id
+        !== myId
+    ) {
+
+        return;
+    }
+
+    if (isHost) {
+
+        hostReceivePlay(
+            myId,
+            tileId
+        );
+
+    } else {
+
+        const conn =
+            Object.values(connections)[0];
+
+        if (!conn) {
+
+            toast("Нет соединения");
+
+            return;
+        }
+
+        sendTo(conn, {
+            type: "play",
+            tileId
+        });
+
+    }
+}
+
+
+// ------------------------------------------------------------
+// RESULT
+// ------------------------------------------------------------
+
+function renderResult() {
+
+    showScreen(resultScreen);
+
+    const winner =
+        game.players.find(
+            p => p.id === game.winner
+        );
+
+    if (!winner) return;
+
+    $("winnerTitle").textContent =
+        `Победитель — ${winner.nick}`;
+
+    $("winnerScore").textContent =
+        `${winner.score} очков`;
+
+    const scores =
+        $("finalScores");
+
+    scores.innerHTML = "";
+
+    [...game.players]
+        .sort((a, b) => b.score - a.score)
+        .forEach((p, i) => {
+
+            scores.innerHTML += `
+                <div class="info-row">
+                    <span>
+                        ${i + 1}. ${escapeHTML(p.nick)}
+                    </span>
+
+                    <strong>
+                        ${p.score}
+                    </strong>
+                </div>
+            `;
+
+        });
+}
+
+
+// ------------------------------------------------------------
+// ESCAPE HTML
+// ------------------------------------------------------------
+
+function escapeHTML(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+// ------------------------------------------------------------
+// COPY ROOM
+// ------------------------------------------------------------
+
+$("copyRoomBtn").addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            await navigator.clipboard.writeText(
+                roomCode
+            );
+
+            toast("Код скопирован");
+
+        } catch {
+
+            toast(`Код комнаты: ${roomCode}`);
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// HOME BUTTONS
+// ------------------------------------------------------------
+
+$("createBtn").addEventListener(
+    "click",
+    () => {
+
+        createHost();
+
+    }
+);
+
+
+$("joinBtn").addEventListener(
+    "click",
+    () => {
+
+        const card = $("joinCard");
+
+        card.style.display =
+            card.style.display === "none"
+                ? "block"
+                : "none";
+
+    }
+);
+
+
+$("connectBtn").addEventListener(
+    "click",
+    () => {
+
+        joinRoom();
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// ENTER IN ROOM INPUT
+// ------------------------------------------------------------
+
+roomInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            joinRoom();
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// LEAVE
+// ------------------------------------------------------------
+
+$("leaveLobbyBtn").addEventListener(
+    "click",
+    () => {
+
+        if (peer) {
+
+            peer.destroy();
+
+            peer = null;
+
+        }
+
+        connections = {};
+
+        game = null;
+
+        isHost = false;
+
+        roomCode = null;
+
+        showScreen(homeScreen);
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// NEW GAME
+// ------------------------------------------------------------
+
+$("newGameBtn").addEventListener(
+    "click",
+    () => {
+
+        if (peer) {
+
+            peer.destroy();
+
+        }
+
+        location.reload();
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// VISUAL UPDATE TIMER
+// ------------------------------------------------------------
+
+setInterval(() => {
+
+    if (game) {
+
+        /*
+            Только для плавного обновления UI.
+        */
+
+        if (
+            game.phase !== "lobby" &&
+            game.phase !== "finished"
+        ) {
+
+            render();
+
+        }
+
+    }
+
+}, 1000);
+
+
+</script>
+
+</body>
+</html>
