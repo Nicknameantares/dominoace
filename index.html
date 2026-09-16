@@ -387,81 +387,50 @@ input:focus {
     padding: 10px;
 }
 
-/* ---------- PLAYER ROUND STATS ---------- */
-
+/* ---------- ROUND STATS ---------- */
 .round-stats {
     background: white;
-    border-radius: 18px;
+    border-radius: 16px;
     padding: 14px;
     margin-top: 12px;
 }
-
 .round-stats-title {
     font-weight: 800;
-    text-align: center;
     margin-bottom: 10px;
+    text-align: center;
 }
-
 .round-stats-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    padding: 10px 4px;
+    gap: 10px;
+    padding: 9px 0;
     border-bottom: 1px solid #eee;
 }
-
-.round-stats-row:last-child {
-    border-bottom: 0;
-}
-
-.round-stats-row.current {
-    background: #f5f3ed;
-    border-radius: 10px;
-    padding-left: 8px;
-    padding-right: 8px;
-}
-
+.round-stats-row:last-child { border-bottom: 0; }
+.round-stats-row.current { font-weight: 800; }
 .round-stats-name {
     min-width: 0;
-    flex: 1;
-    font-weight: 700;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-
 .round-stats-values {
     display: flex;
-    gap: 6px;
-    flex-shrink: 0;
+    gap: 7px;
+    align-items: center;
+    flex: 0 0 auto;
 }
-
 .round-badge {
-    min-width: 76px;
-    padding: 7px 8px;
-    border-radius: 9px;
     background: #eeeae1;
-    text-align: center;
+    border-radius: 8px;
+    padding: 4px 7px;
     font-size: 12px;
-    font-weight: 800;
+    white-space: nowrap;
 }
-
-.round-badge.bid-made {
-    background: #e5b12b;
-}
-
-.round-badge.tricks {
-    background: #236b42;
-    color: white;
-}
-
-.round-stats-waiting {
-    margin-top: 8px;
-    text-align: center;
-    font-size: 12px;
-    color: #777;
-}
+.round-badge.bid-made { background: #e9e5dc; }
+.round-badge.tricks { background: #f5f3ed; }
+.round-stats-waiting { color: #777; font-size: 12px; }
 
 /* ---------- INFO ---------- */
 
@@ -1684,6 +1653,8 @@ function startTrickPlay() {
 
     game.trickNumber = 0;
 
+    // Первый ход нового кона делает первый заявивший.
+    // После каждой взятки ход переходит к её победителю.
     game.currentPlayer = game.firstBidder;
 
     game.lastTrickWinner = null;
@@ -1766,62 +1737,44 @@ function resolveTrick() {
     let winner = game.trick[0];
 
     for (let i = 1; i < game.trick.length; i++) {
-
         const candidate = game.trick[i];
 
         if (
-            compareTiles(
-                candidate.tile,
-                winner.tile
-            ) > 0
+            compareTiles(candidate.tile, winner.tile) > 0
         ) {
-
             winner = candidate;
         }
     }
 
-    const winnerPlayer =
-        game.players[winner.playerIndex];
-
+    const winnerPlayer = game.players[winner.playerIndex];
     winnerPlayer.tricks++;
 
-    game.lastTrickWinner =
-        winner.playerIndex;
-
-    game.currentPlayer =
-        winner.playerIndex;
-
-    game.trickNumber++;
+    game.lastTrickWinner = winner.playerIndex;
 
     /*
-        На короткое время показываем результат
-        взятки, затем продолжаем.
+        Победитель взятки начинает следующую взятку.
+        Это действует после каждой взятки независимо
+        от того, кто начинал кон.
     */
-
+    game.currentPlayer = winner.playerIndex;
+    game.trickNumber++;
     game.phase = "trickResult";
 
     sendFullState();
 
     setTimeout(() => {
-
         if (!game) return;
-
         if (game.phase !== "trickResult") return;
 
-        if (game.players[0].hand.length === 0) {
-
+        if (game.players.every(p => p.hand.length === 0)) {
             finishRound();
-
         } else {
-
             game.trick = [];
-
             game.phase = "playing";
 
+            // currentPlayer не меняем: следующий ход делает победитель.
             sendFullState();
-
         }
-
     }, 1300);
 }
 
@@ -2167,7 +2120,7 @@ function renderTable() {
                 game.players[game.lastTrickWinner];
 
             message.textContent =
-                `Взятку забирает ${winner.nick}`;
+                `Взятку забирает ${winner.nick} — он ходит следующим`;
 
         } else {
 
@@ -2277,67 +2230,53 @@ function renderHand() {
 function renderBidArea() {
 
     const area = $("bidArea");
-
     area.innerHTML = "";
 
     if (game.phase !== "bidding") {
-
-        if (game.phase === "playing") {
-
+        if (
+            game.phase === "playing" ||
+            game.phase === "trickResult"
+        ) {
             area.innerHTML = `
                 <div class="info">
                     <div class="info-row">
                         <span>Заявки</span>
-                        <strong>сделаны</strong>
+                        <strong>все показаны</strong>
                     </div>
                 </div>
             `;
-
         }
-
         return;
     }
 
-    const me =
-        game.players.find(
-            p => p.id === myId
-        );
-
+    const me = game.players.find(p => p.id === myId);
     if (!me) return;
 
     const myTurn =
-        game.players[game.currentPlayer]?.id
-        === myId;
+        game.players[game.currentPlayer]?.id === myId;
 
     if (!myTurn) {
-
         area.innerHTML = `
             <div class="bid-panel">
                 <div class="waiting">
                     Сейчас заявляет:
                     <strong>
                         ${escapeHTML(
-                            game.players[
-                                game.currentPlayer
-                            ].nick
+                            game.players[game.currentPlayer].nick
                         )}
                     </strong>
                 </div>
             </div>
         `;
-
         return;
     }
 
-    const count =
-        isHost
-            ? me.hand.length
-            : (game.myHand || []).length;
+    const count = isHost
+        ? me.hand.length
+        : (game.myHand || []).length;
 
     let buttons = "";
-
     for (let i = 0; i <= count; i++) {
-
         buttons += `
             <button
                 class="bid-btn"
@@ -2346,24 +2285,17 @@ function renderBidArea() {
                 ${i}
             </button>
         `;
-
     }
 
     area.innerHTML = `
         <div class="bid-panel">
-
-            <div class="bid-title">
-                Ваша заявка
-            </div>
-
+            <div class="bid-title">Ваша заявка</div>
             <div class="small" style="text-align:center;margin-bottom:10px">
                 От 0 до ${count} взяток
             </div>
-
             <div class="bid-buttons">
                 ${buttons}
             </div>
-
         </div>
     `;
 }
@@ -2380,79 +2312,51 @@ function renderRoundPanel() {
     if (
         game.phase !== "bidding" &&
         game.phase !== "playing" &&
-        game.phase !== "trickResult" &&
-        game.phase !== "roundResult"
+        game.phase !== "trickResult"
     ) {
         panel.innerHTML = "";
         return;
     }
 
-    const isBidding = game.phase === "bidding";
-    const isRoundResult = game.phase === "roundResult";
-
     let html = `
         <div class="round-stats">
             <div class="round-stats-title">
-                ${isBidding ? "Ставки" : isRoundResult ? "Результат кона" : "Ставки и взятки"}
+                ${game.phase === "bidding" ? "Ставки" : "Ставки и взятки"}
             </div>
     `;
 
     game.players.forEach((p, index) => {
+        const current =
+            game.phase === "bidding"
+                ? game.currentPlayer === index
+                : game.phase === "trickResult"
+                    ? game.lastTrickWinner === index
+                    : game.currentPlayer === index;
 
-        const isCurrent =
-            isBidding &&
-            game.currentPlayer === index;
+        const bidText = p.bid === null
+            ? `<span class="round-stats-waiting">ожидает</span>`
+            : `<span class="round-badge bid-made">Ставка ${p.bid}</span>`;
 
-        const bidText =
-            p.bid === null
-                ? "Ставка —"
-                : `Ставка ${p.bid}`;
+        const tricksText =
+            `<span class="round-badge tricks">Взято ${p.tricks}</span>`;
 
         html += `
-            <div class="round-stats-row ${isCurrent ? "current" : ""}">
-
-                <div class="round-stats-name">
+            <div class="round-stats-row ${current ? "current" : ""}">
+                <span class="round-stats-name">
                     ${escapeHTML(p.nick)}
-                </div>
-
-                <div class="round-stats-values">
-
-                    <div class="round-badge ${p.bid !== null ? "bid-made" : ""}">
-                        ${bidText}
-                    </div>
-
-                    ${
-                        !isBidding
-                            ? `
-                                <div class="round-badge tricks">
-                                    Взято ${p.tricks}
-                                </div>
-                              `
-                            : ""
-                    }
-
-                </div>
-
+                </span>
+                <span class="round-stats-values">
+                    ${bidText}
+                    ${game.phase === "bidding" ? "" : tricksText}
+                </span>
             </div>
         `;
     });
 
-    if (isBidding) {
-        const currentPlayer = game.players[game.currentPlayer];
-
-        if (currentPlayer) {
-            html += `
-                <div class="round-stats-waiting">
-                    Сейчас заявляет:
-                    <strong>${escapeHTML(currentPlayer.nick)}</strong>
-                </div>
-            `;
-        }
-    }
-
     html += `</div>`;
     panel.innerHTML = html;
 }
+
 
 // ------------------------------------------------------------
 // BID
