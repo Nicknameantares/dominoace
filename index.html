@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TRICKO — Домино</title>
+<title>TRICKO — Domino</title>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
@@ -32,7 +32,7 @@ button {
     display: none !important;
 }
 
-/* ---------- HOME ---------- */
+/* HOME */
 
 .screen {
     min-height: 100vh;
@@ -126,7 +126,7 @@ button {
     flex: 1;
 }
 
-/* ---------- LOBBY ---------- */
+/* LOBBY */
 
 .lobby {
     padding: 20px;
@@ -204,7 +204,7 @@ button {
     color: #666;
 }
 
-/* ---------- GAME ---------- */
+/* GAME */
 
 .game {
     min-height: 100vh;
@@ -240,7 +240,7 @@ button {
     padding: 12px;
 }
 
-/* ---------- SCOREBOARD ---------- */
+/* SCORE */
 
 .scoreboard {
     display: grid;
@@ -279,7 +279,7 @@ button {
     color: #888;
 }
 
-/* ---------- TABLE ---------- */
+/* TABLE */
 
 .table {
     background: #236b42;
@@ -311,7 +311,7 @@ button {
     flex-wrap: wrap;
 }
 
-/* ---------- DOMINO ---------- */
+/* DOMINO */
 
 .domino {
     width: 58px;
@@ -384,7 +384,7 @@ button {
     cursor: default;
 }
 
-/* ---------- BIDS / TRICKS ---------- */
+/* STATS */
 
 .info-panel {
     margin-top: 12px;
@@ -420,9 +420,6 @@ button {
 }
 
 .player-stat-left {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     min-width: 0;
 }
 
@@ -468,7 +465,7 @@ button {
     font-weight: 400;
 }
 
-/* ---------- BID AREA ---------- */
+/* BIDS */
 
 .bid-area {
     background: white;
@@ -508,7 +505,7 @@ button {
     padding: 10px;
 }
 
-/* ---------- RESULT ---------- */
+/* RESULT */
 
 .result {
     min-height: 100vh;
@@ -555,7 +552,7 @@ button {
     font-weight: 700;
 }
 
-/* ---------- TOAST ---------- */
+/* TOAST */
 
 .toast {
     position: fixed;
@@ -577,7 +574,7 @@ button {
     opacity: 1;
 }
 
-/* ---------- MOBILE ---------- */
+/* MOBILE */
 
 @media (max-width: 600px) {
 
@@ -618,31 +615,18 @@ button {
         padding: 4px 6px;
         font-size: 11px;
     }
-
-    .bid-buttons {
-        grid-template-columns: repeat(7, 1fr);
-    }
-
-    .bid-button {
-        min-height: 38px;
-    }
 }
 </style>
 </head>
 
 <body>
 
-<!-- HOME -->
 <div id="homeScreen" class="screen home">
     <div class="home-card">
 
         <div class="logo">🀄</div>
-
         <div class="home-title">TRICKO</div>
-
-        <div class="home-subtitle">
-            Bid. Play. Take.
-        </div>
+        <div class="home-subtitle">Bid. Play. Take.</div>
 
         <input
             id="nickname"
@@ -655,14 +639,12 @@ button {
             Создать игру
         </button>
 
-        <div class="home-divider">
-            или
-        </div>
+        <div class="home-divider">или</div>
 
         <input
             id="roomInput"
             class="input"
-            maxlength="6"
+            maxlength="5"
             placeholder="Код игры"
             style="text-transform:uppercase"
         >
@@ -675,7 +657,6 @@ button {
 </div>
 
 
-<!-- LOBBY -->
 <div id="lobbyScreen" class="screen lobby hidden">
 
     <div class="lobby-card">
@@ -686,7 +667,10 @@ button {
                 Комната
             </div>
 
-            <button id="leaveLobbyBtn" class="btn small secondary">
+            <button
+                id="leaveLobbyBtn"
+                class="btn small secondary"
+            >
                 Выйти
             </button>
 
@@ -696,10 +680,16 @@ button {
 
             <div>
                 <div class="small">Код игры</div>
-                <div id="roomCode" class="room-code-value"></div>
+                <div
+                    id="roomCode"
+                    class="room-code-value"
+                ></div>
             </div>
 
-            <button id="copyRoomBtn" class="btn small">
+            <button
+                id="copyRoomBtn"
+                class="btn small"
+            >
                 Копировать
             </button>
 
@@ -711,7 +701,10 @@ button {
 
         <div id="lobbyPlayers"></div>
 
-        <div id="lobbyStatus" class="lobby-status">
+        <div
+            id="lobbyStatus"
+            class="lobby-status"
+        >
             Ожидание игроков...
         </div>
 
@@ -720,17 +713,27 @@ button {
 </div>
 
 
-<!-- GAME -->
 <div id="gameScreen" class="screen game hidden">
 
     <div class="game-header">
 
         <div>
-            <div class="game-title">TRICKO</div>
-            <div id="roundLabel" class="round-label"></div>
+
+            <div class="game-title">
+                TRICKO
+            </div>
+
+            <div
+                id="roundLabel"
+                class="round-label"
+            ></div>
+
         </div>
 
-        <button id="leaveGameBtn" class="btn small secondary">
+        <button
+            id="leaveGameBtn"
+            class="btn small secondary"
+        >
             Выйти
         </button>
 
@@ -738,28 +741,45 @@ button {
 
     <div class="game-main">
 
-        <div id="scoreboard" class="scoreboard"></div>
+        <div
+            id="scoreboard"
+            class="scoreboard"
+        ></div>
 
         <div class="table">
 
-            <div id="tableMessage" class="table-message"></div>
+            <div
+                id="tableMessage"
+                class="table-message"
+            ></div>
 
-            <div id="trick" class="trick"></div>
+            <div
+                id="trick"
+                class="trick"
+            ></div>
 
         </div>
 
-        <div id="hand" class="hand"></div>
+        <div
+            id="hand"
+            class="hand"
+        ></div>
 
-        <div id="bidArea" class="bid-area"></div>
+        <div
+            id="bidArea"
+            class="bid-area"
+        ></div>
 
-        <div id="roundInfoPanel" class="info-panel"></div>
+        <div
+            id="roundInfoPanel"
+            class="info-panel"
+        ></div>
 
     </div>
 
 </div>
 
 
-<!-- RESULT -->
 <div id="resultScreen" class="screen result hidden">
 
     <div class="result-card">
@@ -772,11 +792,17 @@ button {
             Игра окончена
         </div>
 
-        <div id="winner" class="result-winner"></div>
+        <div
+            id="winner"
+            class="result-winner"
+        ></div>
 
         <div id="finalScores"></div>
 
-        <button id="newGameBtn" class="btn">
+        <button
+            id="newGameBtn"
+            class="btn"
+        >
             Новая игра
         </button>
 
@@ -791,37 +817,30 @@ button {
 <script>
 
 /* =========================================================
-   BASIC
+   STATE
 ========================================================= */
-
-const $ = id => document.getElementById(id);
 
 let peer = null;
 let isHost = false;
+
 let roomCode = "";
 let myId = "";
-let myPlayerIndex = -1;
 
 let connections = {};
 
 let game = null;
 
-let renderTimer = null;
-
-
-/* =========================================================
-   STORAGE
-========================================================= */
-
-const savedNickname =
-    localStorage.getItem("tricko_nickname") || "";
-
-$("nickname").value = savedNickname;
+let lobbyStartTimer = null;
 
 
 /* =========================================================
    HELPERS
 ========================================================= */
+
+function $(id) {
+    return document.getElementById(id);
+}
+
 
 function escapeHTML(value) {
 
@@ -842,38 +861,57 @@ function toast(text) {
 
     el.classList.add("show");
 
-    setTimeout(() => {
+    clearTimeout(el._timer);
+
+    el._timer = setTimeout(() => {
         el.classList.remove("show");
-    }, 2200);
+    }, 2500);
 }
 
 
-function showScreen(name) {
+function showScreen(id) {
 
-    $("homeScreen").classList.add("hidden");
-    $("lobbyScreen").classList.add("hidden");
-    $("gameScreen").classList.add("hidden");
-    $("resultScreen").classList.add("hidden");
+    [
+        "homeScreen",
+        "lobbyScreen",
+        "gameScreen",
+        "resultScreen"
+    ].forEach(screen => {
+        $(screen).classList.add("hidden");
+    });
 
-    $(name).classList.remove("hidden");
+    $(id).classList.remove("hidden");
 }
+
+
+/* =========================================================
+   NICKNAME
+========================================================= */
+
+$("nickname").value =
+    localStorage.getItem(
+        "tricko_nickname"
+    ) || "";
 
 
 /* =========================================================
    ROOM CODE
 ========================================================= */
 
-function randomRoomCode(length = 5) {
+function randomRoomCode() {
 
     const chars =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     let result = "";
 
-    for (let i = 0; i < length; i++) {
+    for (let i = 0; i < 5; i++) {
 
-        result +=
-            chars[Math.floor(Math.random() * chars.length)];
+        result += chars[
+            Math.floor(
+                Math.random() * chars.length
+            )
+        ];
     }
 
     return result;
@@ -881,7 +919,7 @@ function randomRoomCode(length = 5) {
 
 
 /* =========================================================
-   DOMINO DECK
+   DECK
 ========================================================= */
 
 function createDeck() {
@@ -899,6 +937,7 @@ function createDeck() {
                 a,
                 b
             });
+
         }
     }
 
@@ -908,18 +947,29 @@ function createDeck() {
 
 function shuffle(array) {
 
-    const arr = [...array];
+    const result = [...array];
 
-    for (let i = arr.length - 1; i > 0; i--) {
+    for (
+        let i = result.length - 1;
+        i > 0;
+        i--
+    ) {
 
         const j =
-            Math.floor(Math.random() * (i + 1));
+            Math.floor(
+                Math.random() * (i + 1)
+            );
 
-        [arr[i], arr[j]] =
-            [arr[j], arr[i]];
+        [
+            result[i],
+            result[j]
+        ] = [
+            result[j],
+            result[i]
+        ];
     }
 
-    return arr;
+    return result;
 }
 
 
@@ -935,9 +985,10 @@ function isTrump(tile) {
 
 function trumpRank(tile) {
 
-    if (!isTrump(tile)) return 0;
+    if (!isTrump(tile))
+        return 0;
 
-    const ranks = {
+    return {
         1: 7,
         2: 6,
         3: 5,
@@ -945,9 +996,7 @@ function trumpRank(tile) {
         5: 3,
         6: 2,
         0: 1
-    };
-
-    return ranks[tile.a];
+    }[tile.a];
 }
 
 
@@ -955,7 +1004,8 @@ function tileStrength(tile) {
 
     if (isTrump(tile)) {
 
-        return 100 + trumpRank(tile);
+        return 100 +
+            trumpRank(tile);
     }
 
     return tile.a + tile.b;
@@ -963,17 +1013,14 @@ function tileStrength(tile) {
 
 
 /*
-    Важно:
-
-    Если сила одинаковая, выигрывает первый сыгранный тайл.
-    Поэтому compareTiles возвращает true только если newTile
-    строго сильнее oldTile.
+    При одинаковой силе побеждает
+    тот, кто сыграл раньше.
 */
 
 function compareTiles(newTile, oldTile) {
 
     return tileStrength(newTile) >
-           tileStrength(oldTile);
+        tileStrength(oldTile);
 }
 
 
@@ -984,19 +1031,11 @@ function compareTiles(newTile, oldTile) {
 function getRoundSizes(playerCount) {
 
     return [
-        1,
-        2,
-        3,
-        4,
-        5,
+        1, 2, 3, 4, 5,
 
         ...Array(playerCount).fill(6),
 
-        5,
-        4,
-        3,
-        2,
-        1,
+        5, 4, 3, 2, 1,
 
         6
     ];
@@ -1004,7 +1043,7 @@ function getRoundSizes(playerCount) {
 
 
 /* =========================================================
-   HOST GAME CREATION
+   GAME STATE
 ========================================================= */
 
 function createGameState() {
@@ -1018,9 +1057,7 @@ function createGameState() {
 
         phase: "lobby",
 
-        dealerStart: 0,
         firstBidder: 0,
-
         currentPlayer: 0,
 
         trick: [],
@@ -1040,55 +1077,55 @@ function createGameState() {
 
 function publicGameState() {
 
-    if (!game) return null;
-
     return {
 
-        players: game.players.map(p => ({
+        players:
+            game.players.map(player => ({
 
-            id: p.id,
-            nick: p.nick,
+                id: player.id,
+                nick: player.nick,
 
-            score: p.score,
-            roundScore: p.roundScore,
+                score: player.score,
+                roundScore:
+                    player.roundScore,
 
-            /*
-                ВАЖНО:
+                bid: player.bid,
+                tricks: player.tricks,
 
-                bid и tricks передаются всем игрокам.
+                connected:
+                    player.connected,
 
-                Поэтому после каждой ставки все игроки
-                получают обновлённое состояние.
-            */
+                handCount:
+                    player.hand.length
 
-            bid: p.bid,
-            tricks: p.tricks,
+            })),
 
-            connected: p.connected,
+        roundIndex:
+            game.roundIndex,
 
-            handCount: p.hand.length
+        roundTotal:
+            game.roundTotal,
 
-        })),
+        phase:
+            game.phase,
 
-        roundIndex: game.roundIndex,
-        roundTotal: game.roundTotal,
+        firstBidder:
+            game.firstBidder,
 
-        phase: game.phase,
+        currentPlayer:
+            game.currentPlayer,
 
-        dealerStart: game.dealerStart,
-        firstBidder: game.firstBidder,
+        trick:
+            game.trick,
 
-        currentPlayer: game.currentPlayer,
-
-        trick: game.trick,
-
-        trickNumber: game.trickNumber,
+        trickNumber:
+            game.trickNumber,
 
         lastTrickWinner:
             game.lastTrickWinner,
 
-        winner: game.winner
-
+        winner:
+            game.winner
     };
 }
 
@@ -1097,37 +1134,46 @@ function publicGameState() {
    SEND STATE
 ========================================================= */
 
+/*
+    КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
+
+    Раньше здесь состояние хоста заменялось
+    publicGameState(), из-за чего хост терял руки.
+
+    Теперь хост НЕ получает public state обратно.
+
+    Хост хранит полное авторитетное состояние.
+*/
+
 function sendFullState() {
 
-    if (!isHost || !game) return;
+    if (!isHost || !game)
+        return;
 
     const publicState =
         publicGameState();
 
-    /*
-        Отправляем каждому игроку
-        его собственную руку.
-    */
+    game.players.forEach(
+        player => {
 
-    game.players.forEach(player => {
+            if (
+                player.id === myId
+            ) {
 
-        const payload = {
+                /*
+                    Ничего не перезаписываем.
 
-            type: "state",
+                    У хоста уже есть:
 
-            game: publicState,
+                    game.players[i].hand
 
-            myHand: player.hand,
+                    и это настоящее состояние игры.
+                */
 
-            myId: player.id
+                render();
 
-        };
-
-        if (player.id === myId) {
-
-            mergePublicState(payload);
-
-        } else {
+                return;
+            }
 
             const conn =
                 connections[player.id];
@@ -1137,42 +1183,59 @@ function sendFullState() {
                 conn.open
             ) {
 
-                conn.send(payload);
+                conn.send({
+
+                    type: "state",
+
+                    game: publicState,
+
+                    myHand:
+                        player.hand,
+
+                    myId:
+                        player.id
+                });
             }
         }
+    );
 
-    });
+    render();
 }
 
 
 /* =========================================================
-   MERGE STATE FOR CLIENT
+   CLIENT STATE
 ========================================================= */
 
-function mergePublicState(payload) {
+function receiveState(payload) {
 
-    if (!payload || !payload.game)
+    if (
+        !payload ||
+        !payload.game
+    ) {
         return;
+    }
 
-    const oldHand =
-        game?.myHand || [];
+    /*
+        Для клиента сохраняем только
+        публичную часть + свою руку.
+    */
 
     game = {
 
         ...payload.game,
 
         myHand:
-            payload.myHand || oldHand
-
+            Array.isArray(payload.myHand)
+                ? payload.myHand
+                : (
+                    game?.myHand || []
+                )
     };
 
     myId =
-        payload.myId || myId;
-
-    myPlayerIndex =
-        game.players.findIndex(
-            p => p.id === myId
-        );
+        payload.myId ||
+        myId;
 
     render();
 }
@@ -1184,82 +1247,69 @@ function mergePublicState(payload) {
 
 function startRound() {
 
-    const playerCount =
+    if (!isHost)
+        return;
+
+    const count =
         game.players.length;
 
-    const roundSizes =
-        getRoundSizes(playerCount);
+    const rounds =
+        getRoundSizes(count);
 
     game.roundTotal =
-        roundSizes.length;
+        rounds.length;
 
     const handSize =
-        roundSizes[game.roundIndex] || 6;
+        rounds[
+            game.roundIndex
+        ] || 6;
 
     game.firstBidder =
-        game.roundIndex % playerCount;
+        game.roundIndex % count;
 
     game.currentPlayer =
         game.firstBidder;
+
+    game.phase =
+        "bidding";
 
     game.trick = [];
 
     game.trickNumber = 0;
 
-    game.lastTrickWinner = null;
-
-    game.phase = "bidding";
+    game.lastTrickWinner =
+        null;
 
     const deck =
         shuffle(createDeck());
 
-    game.players.forEach(player => {
+    game.players.forEach(
+        player => {
 
-        player.hand =
-            deck.splice(0, handSize);
+            player.hand =
+                deck.splice(
+                    0,
+                    handSize
+                );
 
-        player.bid = null;
-        player.tricks = 0;
-        player.roundScore = 0;
+            player.bid = null;
 
-    });
+            player.tricks = 0;
+
+            player.roundScore = 0;
+        }
+    );
 
     sendFullState();
 
     toast(
-        `Раунд ${game.roundIndex + 1}. Ставки`
+        `Раунд ${game.roundIndex + 1}: сделайте ставку`
     );
 }
 
 
 /* =========================================================
-   START TRICK PLAY
-========================================================= */
-
-function startTrickPlay() {
-
-    game.phase = "playing";
-
-    game.currentPlayer =
-        game.firstBidder;
-
-    game.trick = [];
-
-    game.trickNumber = 0;
-
-    sendFullState();
-
-    const bidder =
-        game.players[game.currentPlayer];
-
-    toast(
-        `${bidder.nick} ходит первым`
-    );
-}
-
-
-/* =========================================================
-   RECEIVE BID
+   BIDDING
 ========================================================= */
 
 function hostReceiveBid(
@@ -1268,28 +1318,31 @@ function hostReceiveBid(
 ) {
 
     if (
+        !isHost ||
         !game ||
         game.phase !== "bidding"
-    ) return;
+    ) {
+        return;
+    }
 
-    const playerIndex =
+    const index =
         game.players.findIndex(
-            p => p.id === playerId
+            player =>
+                player.id === playerId
         );
 
-    if (playerIndex === -1)
+    if (index === -1)
         return;
 
     if (
-        playerIndex !==
+        index !==
         game.currentPlayer
-    ) return;
+    ) {
+        return;
+    }
 
     const player =
-        game.players[playerIndex];
-
-    const maxBid =
-        player.hand.length;
+        game.players[index];
 
     value =
         Number(value);
@@ -1297,51 +1350,82 @@ function hostReceiveBid(
     if (
         !Number.isInteger(value) ||
         value < 0 ||
-        value > maxBid
-    ) return;
-
-    /*
-        Сохраняем ставку.
-
-        После этого sendFullState()
-        немедленно показывает её всем.
-    */
+        value > player.hand.length
+    ) {
+        return;
+    }
 
     player.bid = value;
 
     /*
-        Если ставки ещё остались —
-        передаём ход следующему игроку.
+        Находим следующего,
+        кто ещё не ставил.
     */
 
-    const nextPlayer =
+    const next =
         game.players.findIndex(
-            p => p.bid === null
+            player =>
+                player.bid === null
         );
 
-    if (nextPlayer !== -1) {
-
-        game.currentPlayer =
-            nextPlayer;
-
-    } else {
+    if (next === -1) {
 
         /*
-            Все сделали ставки.
-            Теперь все заявки уже видны всем.
+            Все ставки сделаны.
+
+            Важно: сначала отправляем
+            состояние со всеми ставками,
+            затем начинаем игру.
         */
 
-        startTrickPlay();
+        sendFullState();
+
+        setTimeout(() => {
+
+            startTrickPlay();
+
+        }, 250);
 
         return;
     }
+
+    game.currentPlayer =
+        next;
+
+    /*
+        Здесь новая ставка сразу
+        появляется у всех.
+    */
 
     sendFullState();
 }
 
 
 /* =========================================================
-   RECEIVE PLAY
+   START PLAY
+========================================================= */
+
+function startTrickPlay() {
+
+    if (!isHost)
+        return;
+
+    game.phase =
+        "playing";
+
+    game.trick = [];
+
+    game.trickNumber = 0;
+
+    game.currentPlayer =
+        game.firstBidder;
+
+    sendFullState();
+}
+
+
+/* =========================================================
+   PLAY
 ========================================================= */
 
 function hostReceivePlay(
@@ -1350,13 +1434,17 @@ function hostReceivePlay(
 ) {
 
     if (
+        !isHost ||
         !game ||
         game.phase !== "playing"
-    ) return;
+    ) {
+        return;
+    }
 
     const playerIndex =
         game.players.findIndex(
-            p => p.id === playerId
+            player =>
+                player.id === playerId
         );
 
     if (playerIndex === -1)
@@ -1365,14 +1453,17 @@ function hostReceivePlay(
     if (
         playerIndex !==
         game.currentPlayer
-    ) return;
+    ) {
+        return;
+    }
 
     const player =
         game.players[playerIndex];
 
     const tileIndex =
         player.hand.findIndex(
-            t => t.id === tileId
+            tile =>
+                tile.id === tileId
         );
 
     if (tileIndex === -1)
@@ -1391,12 +1482,10 @@ function hostReceivePlay(
         playerIndex,
 
         tile
-
     });
 
     /*
-        Если все игроки сходили —
-        определяем победителя взятки.
+        Все сходили.
     */
 
     if (
@@ -1409,10 +1498,6 @@ function hostReceivePlay(
         return;
     }
 
-    /*
-        Следующий игрок по кругу.
-    */
-
     game.currentPlayer =
         (
             game.currentPlayer + 1
@@ -1424,10 +1509,16 @@ function hostReceivePlay(
 
 
 /* =========================================================
-   RESOLVE TRICK
+   TRICK RESULT
 ========================================================= */
 
 function resolveTrick() {
+
+    if (
+        !game.trick.length
+    ) {
+        return;
+    }
 
     let winner =
         game.trick[0];
@@ -1448,7 +1539,8 @@ function resolveTrick() {
             )
         ) {
 
-            winner = candidate;
+            winner =
+                candidate;
         }
     }
 
@@ -1467,20 +1559,21 @@ function resolveTrick() {
     game.phase =
         "trickResult";
 
+    /*
+        Здесь у всех обновляется "Взял".
+    */
+
     sendFullState();
 
     setTimeout(() => {
 
-        /*
-            Проверяем, закончились ли карты.
-        */
-
-        const cardsLeft =
+        const cardsRemain =
             game.players.some(
-                p => p.hand.length > 0
+                player =>
+                    player.hand.length > 0
             );
 
-        if (!cardsLeft) {
+        if (!cardsRemain) {
 
             finishRound();
 
@@ -1489,7 +1582,8 @@ function resolveTrick() {
 
         game.trick = [];
 
-        game.phase = "playing";
+        game.phase =
+            "playing";
 
         sendFullState();
 
@@ -1498,10 +1592,12 @@ function resolveTrick() {
 
 
 /* =========================================================
-   SCORING
+   SCORE
 ========================================================= */
 
-function calculateRoundScore(player) {
+function calculateRoundScore(
+    player
+) {
 
     const bid =
         player.bid;
@@ -1513,7 +1609,6 @@ function calculateRoundScore(player) {
         bid === 0 &&
         tricks === 0
     ) {
-
         return 5;
     }
 
@@ -1521,20 +1616,14 @@ function calculateRoundScore(player) {
         bid > 0 &&
         tricks === bid
     ) {
-
         return 10 * bid;
     }
 
     if (
         tricks > bid
     ) {
-
         return tricks;
     }
-
-    /*
-        Недобор.
-    */
 
     return -10 * bid;
 }
@@ -1553,11 +1642,12 @@ function finishRound() {
         player => {
 
             player.roundScore =
-                calculateRoundScore(player);
+                calculateRoundScore(
+                    player
+                );
 
             player.score +=
                 player.roundScore;
-
         }
     );
 
@@ -1577,7 +1667,6 @@ function finishRound() {
         } else {
 
             finishCycle();
-
         }
 
     }, 2200);
@@ -1585,7 +1674,7 @@ function finishRound() {
 
 
 /* =========================================================
-   FINISH CYCLE
+   FINISH CYCLE / TIE
 ========================================================= */
 
 function finishCycle() {
@@ -1593,26 +1682,27 @@ function finishCycle() {
     const maxScore =
         Math.max(
             ...game.players.map(
-                p => p.score
+                player =>
+                    player.score
             )
         );
 
-    const winners =
+    const leaders =
         game.players.filter(
-            p => p.score === maxScore
+            player =>
+                player.score ===
+                maxScore
         );
 
-    /*
-        Один победитель.
-    */
-
-    if (winners.length === 1) {
+    if (
+        leaders.length === 1
+    ) {
 
         game.phase =
             "finished";
 
         game.winner =
-            winners[0].id;
+            leaders[0].id;
 
         sendFullState();
 
@@ -1622,8 +1712,7 @@ function finishCycle() {
     /*
         Ничья.
 
-        Дополнительный раунд на 6 карт
-        только среди текущих лидеров.
+        Дополнительный кон на 6 карт.
     */
 
     game.roundIndex++;
@@ -1632,7 +1721,9 @@ function finishCycle() {
         game.roundIndex + 1;
 
     game.firstBidder =
-        (game.roundIndex - 1) %
+        (
+            game.roundIndex - 1
+        ) %
         game.players.length;
 
     game.currentPlayer =
@@ -1645,24 +1736,30 @@ function finishCycle() {
 
     game.trickNumber = 0;
 
+    game.lastTrickWinner =
+        null;
+
     const deck =
         shuffle(createDeck());
 
-    game.players.forEach(player => {
+    game.players.forEach(
+        player => {
 
-        player.hand =
-            deck.splice(0, 6);
+            player.hand =
+                deck.splice(0, 6);
 
-        player.bid = null;
-        player.tricks = 0;
-        player.roundScore = 0;
+            player.bid = null;
 
-    });
+            player.tricks = 0;
+
+            player.roundScore = 0;
+        }
+    );
 
     sendFullState();
 
     toast(
-        "Ничья! Дополнительный раунд"
+        "Ничья! Дополнительный кон на 6 карт"
     );
 }
 
@@ -1673,7 +1770,8 @@ function finishCycle() {
 
 function render() {
 
-    if (!game) return;
+    if (!game)
+        return;
 
     if (
         game.phase === "lobby"
@@ -1698,84 +1796,97 @@ function render() {
 
 
 /* =========================================================
-   LOBBY RENDER
+   LOBBY
 ========================================================= */
 
 function renderLobby() {
 
-    showScreen("lobbyScreen");
+    showScreen(
+        "lobbyScreen"
+    );
 
     $("roomCode").textContent =
         roomCode;
 
-    const players =
-        game.players || [];
-
     $("lobbyPlayers").innerHTML =
-        players.map(
-            (p, index) => `
+        game.players.map(
+            (player, index) => `
+
                 <div class="player-row">
 
                     <div>
+
                         <div class="player-name">
-                            ${escapeHTML(p.nick)}
+                            ${escapeHTML(player.nick)}
                         </div>
 
                         ${
                             index === 0
-                                ? `<div class="host-label">ХОСТ</div>`
+                                ? `<div class="host-label">
+                                    ХОСТ
+                                   </div>`
                                 : ""
                         }
+
                     </div>
 
                     <div>
                         ${
-                            p.connected
+                            player.connected
                                 ? "🟢"
                                 : "⚪"
                         }
                     </div>
 
                 </div>
+
             `
         ).join("");
 
-    if (players.length < 2) {
+    if (
+        game.players.length < 2
+    ) {
 
         $("lobbyStatus").textContent =
-            "Нужно минимум 2 игрока";
+            "Ожидание второго игрока...";
 
-    } else if (players.length < 4) {
+    } else if (
+        game.players.length < 4
+    ) {
 
         $("lobbyStatus").textContent =
-            `Игроков: ${players.length}. Можно начинать.`;
+            `Игроков: ${game.players.length}. Игра начнётся автоматически.`;
 
     } else {
 
         $("lobbyStatus").textContent =
-            "Все места заняты. Игра скоро начнётся.";
+            "4 игрока. Игра начнётся автоматически.";
     }
 }
 
 
 /* =========================================================
-   GAME RENDER
+   GAME
 ========================================================= */
 
 function renderGame() {
 
-    showScreen("gameScreen");
+    showScreen(
+        "gameScreen"
+    );
 
-    const roundSizes =
+    const rounds =
         getRoundSizes(
             game.players.length
         );
 
-    const currentHandSize =
-        roundSizes[game.roundIndex] || 6;
+    const handSize =
+        rounds[
+            game.roundIndex
+        ] || 6;
 
     $("roundLabel").textContent =
-        `Раунд ${game.roundIndex + 1} / ${game.roundTotal} · ${currentHandSize} карт`;
+        `Раунд ${game.roundIndex + 1} / ${game.roundTotal} · ${handSize} карт`;
 
     renderScoreboard();
 
@@ -1797,42 +1908,40 @@ function renderScoreboard() {
 
     $("scoreboard").innerHTML =
         game.players.map(
-            (p, index) => {
+            player => `
 
-                const me =
-                    p.id === myId;
+                <div class="
+                    score-player
+                    ${
+                        player.id === myId
+                            ? "me"
+                            : ""
+                    }
+                ">
 
-                return `
+                    <div class="score-player-name">
 
-                    <div class="
-                        score-player
-                        ${me ? "me" : ""}
-                    ">
+                        ${escapeHTML(player.nick)}
 
-                        <div class="score-player-name">
-
-                            ${escapeHTML(p.nick)}
-
-                            ${
-                                me
-                                    ? " · Вы"
-                                    : ""
-                            }
-
-                        </div>
-
-                        <div class="score">
-                            ${p.score}
-                        </div>
-
-                        <div class="small">
-                            Общий счёт
-                        </div>
+                        ${
+                            player.id === myId
+                                ? " · Вы"
+                                : ""
+                        }
 
                     </div>
 
-                `;
-            }
+                    <div class="score">
+                        ${player.score}
+                    </div>
+
+                    <div class="small">
+                        Общий счёт
+                    </div>
+
+                </div>
+
+            `
         ).join("");
 }
 
@@ -1856,18 +1965,10 @@ function renderTable() {
 
         if (player) {
 
-            if (
+            message =
                 player.id === myId
-            ) {
-
-                message =
-                    "Ваша очередь делать ставку";
-
-            } else {
-
-                message =
-                    `${escapeHTML(player.nick)} делает ставку`;
-            }
+                    ? "Ваша очередь делать ставку"
+                    : `${escapeHTML(player.nick)} делает ставку`;
         }
 
     } else if (
@@ -1881,18 +1982,10 @@ function renderTable() {
 
         if (player) {
 
-            if (
+            message =
                 player.id === myId
-            ) {
-
-                message =
-                    "Ваш ход";
-
-            } else {
-
-                message =
-                    `Ход: ${escapeHTML(player.nick)}`;
-            }
+                    ? "Ваш ход"
+                    : `Ход: ${escapeHTML(player.nick)}`;
         }
 
     } else if (
@@ -1916,10 +2009,6 @@ function renderTable() {
 
         message =
             "Раунд завершён";
-
-    } else {
-
-        message = "";
     }
 
     $("tableMessage").innerHTML =
@@ -1927,37 +2016,40 @@ function renderTable() {
 
     $("trick").innerHTML =
         game.trick.map(
-            item => {
+            item => `
 
-                return `
-                    <div>
-                        ${renderDomino(item.tile)}
-                        <div style="
-                            color:white;
-                            font-size:11px;
-                            text-align:center;
-                            margin-top:4px;
-                        ">
-                            ${escapeHTML(
-                                game.players[
-                                    item.playerIndex
-                                ].nick
-                            )}
-                        </div>
+                <div>
+
+                    ${renderDomino(item.tile)}
+
+                    <div style="
+                        color:white;
+                        font-size:11px;
+                        text-align:center;
+                        margin-top:4px;
+                    ">
+                        ${escapeHTML(
+                            game.players[
+                                item.playerIndex
+                            ].nick
+                        )}
                     </div>
-                `;
-            }
+
+                </div>
+
+            `
         ).join("");
 }
 
 
 /* =========================================================
-   DOMINO RENDER
+   DOMINO
 ========================================================= */
 
 function renderDomino(tile) {
 
     return `
+
         <div class="domino">
 
             <div class="domino-half">
@@ -1969,6 +2061,7 @@ function renderDomino(tile) {
             </div>
 
         </div>
+
     `;
 }
 
@@ -1978,16 +2071,11 @@ function renderPips(number) {
     const positions = {
 
         1: ["p5"],
-
-        2: ["p1", "p9"],
-
-        3: ["p1", "p5", "p9"],
-
-        4: ["p1", "p3", "p7", "p9"],
-
-        5: ["p1", "p3", "p5", "p7", "p9"],
-
-        6: ["p1", "p3", "p4", "p6", "p7", "p9"]
+        2: ["p1","p9"],
+        3: ["p1","p5","p9"],
+        4: ["p1","p3","p7","p9"],
+        5: ["p1","p3","p5","p7","p9"],
+        6: ["p1","p3","p4","p6","p7","p9"]
 
     };
 
@@ -1999,17 +2087,20 @@ function renderPips(number) {
     }
 
     return `
+
         <div class="domino-pips">
 
-            ${positions[number]
-                .map(
-                    p =>
-                        `<span class="pip ${p}"></span>`
-                )
-                .join("")
+            ${
+                positions[number]
+                    .map(
+                        position =>
+                            `<span class="pip ${position}"></span>`
+                    )
+                    .join("")
             }
 
         </div>
+
     `;
 }
 
@@ -2018,25 +2109,27 @@ function renderPips(number) {
    HAND
 ========================================================= */
 
-function renderHand() {
-
-    let hand = [];
+function getMyHand() {
 
     if (isHost) {
 
         const me =
             game.players.find(
-                p => p.id === myId
+                player =>
+                    player.id === myId
             );
 
-        hand =
-            me?.hand || [];
-
-    } else {
-
-        hand =
-            game.myHand || [];
+        return me?.hand || [];
     }
+
+    return game.myHand || [];
+}
+
+
+function renderHand() {
+
+    const hand =
+        getMyHand();
 
     const canPlay =
         game.phase === "playing" &&
@@ -2046,33 +2139,35 @@ function renderHand() {
 
     $("hand").innerHTML =
         hand.map(
-            tile => {
+            tile => `
 
-                return `
-                    <div
-                        class="domino ${
+                <div
+                    class="
+                        domino
+                        ${
                             canPlay
                                 ? ""
                                 : "disabled"
-                        }"
-                        ${
-                            canPlay
-                                ? `onclick="playTile(${tile.id})"`
-                                : ""
                         }
-                    >
+                    "
+                    ${
+                        canPlay
+                            ? `onclick="playTile(${tile.id})"`
+                            : ""
+                    }
+                >
 
-                        <div class="domino-half">
-                            ${renderPips(tile.a)}
-                        </div>
-
-                        <div class="domino-half">
-                            ${renderPips(tile.b)}
-                        </div>
-
+                    <div class="domino-half">
+                        ${renderPips(tile.a)}
                     </div>
-                `;
-            }
+
+                    <div class="domino-half">
+                        ${renderPips(tile.b)}
+                    </div>
+
+                </div>
+
+            `
         ).join("");
 }
 
@@ -2095,12 +2190,12 @@ function renderBidArea() {
         return;
     }
 
-    const current =
+    const player =
         game.players[
             game.currentPlayer
         ];
 
-    if (!current) {
+    if (!player) {
 
         area.innerHTML = "";
 
@@ -2108,7 +2203,7 @@ function renderBidArea() {
     }
 
     if (
-        current.id !== myId
+        player.id !== myId
     ) {
 
         area.innerHTML = `
@@ -2121,7 +2216,7 @@ function renderBidArea() {
 
                 Сейчас заявляет
                 <strong>
-                    ${escapeHTML(current.nick)}
+                    ${escapeHTML(player.nick)}
                 </strong>
 
             </div>
@@ -2131,8 +2226,8 @@ function renderBidArea() {
         return;
     }
 
-    const handSize =
-        current.hand.length;
+    const max =
+        player.hand.length;
 
     let html = `
 
@@ -2141,12 +2236,11 @@ function renderBidArea() {
         </div>
 
         <div class="bid-buttons">
-
     `;
 
     for (
         let i = 0;
-        i <= handSize;
+        i <= max;
         i++
     ) {
 
@@ -2172,7 +2266,7 @@ function renderBidArea() {
 
 
 /* =========================================================
-   ROUND PANEL
+   ROUND INFO
 ========================================================= */
 
 function renderRoundPanel() {
@@ -2181,10 +2275,12 @@ function renderRoundPanel() {
         $("roundInfoPanel");
 
     if (
-        game.phase !== "bidding" &&
-        game.phase !== "playing" &&
-        game.phase !== "trickResult" &&
-        game.phase !== "roundResult"
+        ![
+            "bidding",
+            "playing",
+            "trickResult",
+            "roundResult"
+        ].includes(game.phase)
     ) {
 
         panel.innerHTML = "";
@@ -2192,18 +2288,10 @@ function renderRoundPanel() {
         return;
     }
 
-    let title = "";
-
-    if (
+    const title =
         game.phase === "bidding"
-    ) {
-
-        title = "Ставки";
-
-    } else {
-
-        title = "Ставки и взятки";
-    }
+            ? "Ставки"
+            : "Ставки и взятки";
 
     let html = `
 
@@ -2212,13 +2300,12 @@ function renderRoundPanel() {
             <div class="player-stats-title">
                 ${title}
             </div>
-
     `;
 
     game.players.forEach(
-        (p, index) => {
+        (player, index) => {
 
-            const isCurrent =
+            const current =
                 game.phase === "bidding" &&
                 game.currentPlayer === index;
 
@@ -2229,11 +2316,11 @@ function renderRoundPanel() {
             ) {
 
                 if (
-                    p.bid === null
+                    player.bid === null
                 ) {
 
                     status =
-                        isCurrent
+                        current
                             ? "Сейчас заявляет"
                             : "Ожидает";
 
@@ -2245,28 +2332,25 @@ function renderRoundPanel() {
 
             } else {
 
-                status = "В игре";
+                status =
+                    "В игре";
             }
 
             html += `
 
                 <div class="
                     player-stat
-                    ${isCurrent ? "current" : ""}
+                    ${current ? "current" : ""}
                 ">
 
                     <div class="player-stat-left">
 
-                        <div>
+                        <div class="player-stat-name">
+                            ${escapeHTML(player.nick)}
+                        </div>
 
-                            <div class="player-stat-name">
-                                ${escapeHTML(p.nick)}
-                            </div>
-
-                            <div class="player-stat-status">
-                                ${status}
-                            </div>
-
+                        <div class="player-stat-status">
+                            ${status}
                         </div>
 
                     </div>
@@ -2276,13 +2360,17 @@ function renderRoundPanel() {
                         <div class="
                             stat-badge
                             bid
-                            ${p.bid === null ? "pending" : ""}
+                            ${
+                                player.bid === null
+                                    ? "pending"
+                                    : ""
+                            }
                         ">
 
                             ${
-                                p.bid === null
+                                player.bid === null
                                     ? "Ставка —"
-                                    : "Ставка " + p.bid
+                                    : "Ставка " + player.bid
                             }
 
                         </div>
@@ -2290,15 +2378,13 @@ function renderRoundPanel() {
                         ${
                             game.phase !== "bidding"
                                 ? `
-
                                     <div class="
                                         stat-badge
                                         tricks
                                     ">
-                                        Взял ${p.tricks}
+                                        Взял ${player.tricks}
                                     </div>
-
-                                `
+                                  `
                                 : ""
                         }
 
@@ -2311,9 +2397,7 @@ function renderRoundPanel() {
     );
 
     html += `
-
         </div>
-
     `;
 
     panel.innerHTML =
@@ -2322,7 +2406,7 @@ function renderRoundPanel() {
 
 
 /* =========================================================
-   MAKE BID
+   BID
 ========================================================= */
 
 function makeBid(value) {
@@ -2330,7 +2414,9 @@ function makeBid(value) {
     if (
         !game ||
         game.phase !== "bidding"
-    ) return;
+    ) {
+        return;
+    }
 
     const current =
         game.players[
@@ -2340,7 +2426,9 @@ function makeBid(value) {
     if (
         !current ||
         current.id !== myId
-    ) return;
+    ) {
+        return;
+    }
 
     if (isHost) {
 
@@ -2356,7 +2444,6 @@ function makeBid(value) {
             type: "bid",
 
             value
-
         });
     }
 }
@@ -2371,7 +2458,9 @@ function playTile(tileId) {
     if (
         !game ||
         game.phase !== "playing"
-    ) return;
+    ) {
+        return;
+    }
 
     const current =
         game.players[
@@ -2381,7 +2470,9 @@ function playTile(tileId) {
     if (
         !current ||
         current.id !== myId
-    ) return;
+    ) {
+        return;
+    }
 
     if (isHost) {
 
@@ -2397,21 +2488,28 @@ function playTile(tileId) {
             type: "play",
 
             tileId
-
         });
     }
 }
 
 
 /* =========================================================
-   HOST CONNECTION
+   HOST PEER
 ========================================================= */
 
-function setupHostPeer() {
+function createHostPeer() {
 
-    peer = new Peer(
-        "domino-" + roomCode
-    );
+    const peerId =
+        "domino-" +
+        roomCode;
+
+    peer =
+        new Peer(
+            peerId,
+            {
+                debug: 1
+            }
+        );
 
     peer.on(
         "open",
@@ -2429,22 +2527,20 @@ function setupHostPeer() {
                 nick:
                     localStorage.getItem(
                         "tricko_nickname"
-                    ),
+                    ) || "Игрок",
 
                 score: 0,
+
                 roundScore: 0,
 
                 bid: null,
+
                 tricks: 0,
 
                 connected: true,
 
                 hand: []
-
             });
-
-            game.phase =
-                "lobby";
 
             showScreen(
                 "lobbyScreen"
@@ -2463,8 +2559,20 @@ function setupHostPeer() {
         "connection",
         conn => {
 
-            connections[conn.peer] =
-                conn;
+            connections[
+                conn.peer
+            ] = conn;
+
+            conn.on(
+                "open",
+                () => {
+
+                    /*
+                        Пока игрок ещё не отправил join.
+                    */
+
+                }
+            );
 
             conn.on(
                 "data",
@@ -2474,7 +2582,6 @@ function setupHostPeer() {
                         conn,
                         data
                     );
-
                 }
             );
 
@@ -2482,8 +2589,11 @@ function setupHostPeer() {
                 "close",
                 () => {
 
+                    if (!game)
+                        return;
+
                     const player =
-                        game?.players.find(
+                        game.players.find(
                             p =>
                                 p.id ===
                                 conn.peer
@@ -2498,6 +2608,17 @@ function setupHostPeer() {
                     }
                 }
             );
+
+            conn.on(
+                "error",
+                error => {
+
+                    console.error(
+                        "Connection error:",
+                        error
+                    );
+                }
+            );
         }
     );
 
@@ -2506,7 +2627,10 @@ function setupHostPeer() {
         "error",
         error => {
 
-            console.error(error);
+            console.error(
+                "Peer error:",
+                error
+            );
 
             if (
                 error.type ===
@@ -2514,10 +2638,25 @@ function setupHostPeer() {
             ) {
 
                 toast(
-                    "Такой код уже занят"
+                    "Не удалось создать комнату. Попробуйте ещё раз."
+                );
+
+            } else if (
+                error.type ===
+                "network"
+            ) {
+
+                toast(
+                    "Нет соединения с сервером PeerJS"
+                );
+
+            } else {
+
+                toast(
+                    "Ошибка соединения: " +
+                    error.type
                 );
             }
-
         }
     );
 }
@@ -2535,7 +2674,9 @@ function handleHostMessage(
     if (
         !data ||
         !game
-    ) return;
+    ) {
+        return;
+    }
 
     if (
         data.type === "join"
@@ -2557,63 +2698,104 @@ function handleHostMessage(
             return;
         }
 
-        const exists =
-            game.players.some(
-                p =>
-                    p.id ===
+        if (
+            game.phase !== "lobby"
+        ) {
+
+            conn.send({
+
+                type: "error",
+
+                message:
+                    "Игра уже началась"
+
+            });
+
+            return;
+        }
+
+        const existing =
+            game.players.find(
+                player =>
+                    player.id ===
                     conn.peer
             );
 
-        if (exists) return;
+        if (existing) {
+
+            existing.connected =
+                true;
+
+            sendFullState();
+
+            return;
+        }
+
+        const nick =
+            String(
+                data.nick ||
+                "Игрок"
+            )
+            .trim()
+            .slice(0, 20);
 
         game.players.push({
 
             id: conn.peer,
 
             nick:
-                String(
-                    data.nick || "Игрок"
-                ).slice(0, 20),
+                nick || "Игрок",
 
             score: 0,
+
             roundScore: 0,
 
             bid: null,
+
             tricks: 0,
 
             connected: true,
 
             hand: []
-
         });
 
         sendFullState();
 
         /*
-            Автоматически запускаем игру
-            через несколько секунд после
-            появления второго игрока.
+            Запускаем таймер только один раз.
         */
 
         if (
             game.players.length >= 2 &&
-            game.phase === "lobby"
+            !lobbyStartTimer
         ) {
 
-            setTimeout(() => {
+            lobbyStartTimer =
+                setTimeout(
+                    () => {
 
-                if (
-                    game.phase === "lobby" &&
-                    game.players.length >= 2
-                ) {
+                        lobbyStartTimer =
+                            null;
 
-                    game.roundIndex = 0;
+                        if (
+                            game &&
+                            game.phase ===
+                            "lobby" &&
+                            game.players.length >= 2
+                        ) {
 
-                    startRound();
-                }
+                            game.roundIndex =
+                                0;
 
-            }, 4000);
+                            startRound();
+                        }
+
+                    },
+                    3000
+                );
         }
+
+        return;
     }
 
 
@@ -2625,6 +2807,8 @@ function handleHostMessage(
             conn.peer,
             data.value
         );
+
+        return;
     }
 
 
@@ -2636,6 +2820,8 @@ function handleHostMessage(
             conn.peer,
             data.tileId
         );
+
+        return;
     }
 }
 
@@ -2686,7 +2872,9 @@ function joinRoom() {
     isHost = false;
 
     peer =
-        new Peer();
+        new Peer({
+            debug: 1
+        });
 
     peer.on(
         "open",
@@ -2695,13 +2883,15 @@ function joinRoom() {
             myId = id;
 
             const hostId =
-                "domino-" + roomCode;
+                "domino-" +
+                roomCode;
 
             const conn =
                 peer.connect(
                     hostId,
                     {
-                        reliable: true
+                        reliable: true,
+                        serialization: "json"
                     }
                 );
 
@@ -2717,11 +2907,10 @@ function joinRoom() {
                         type: "join",
 
                         nick
-
                     });
 
                     toast(
-                        "Подключение..."
+                        "Подключено"
                     );
                 }
             );
@@ -2735,7 +2924,7 @@ function joinRoom() {
                         "state"
                     ) {
 
-                        mergePublicState(
+                        receiveState(
                             data
                         );
                     }
@@ -2761,6 +2950,21 @@ function joinRoom() {
                     );
                 }
             );
+
+            conn.on(
+                "error",
+                error => {
+
+                    console.error(
+                        "Connection error:",
+                        error
+                    );
+
+                    toast(
+                        "Ошибка соединения"
+                    );
+                }
+            );
         }
     );
 
@@ -2769,11 +2973,27 @@ function joinRoom() {
         "error",
         error => {
 
-            console.error(error);
-
-            toast(
-                "Не удалось подключиться"
+            console.error(
+                "Peer error:",
+                error
             );
+
+            if (
+                error.type ===
+                "peer-unavailable"
+            ) {
+
+                toast(
+                    "Игра с таким кодом не найдена"
+                );
+
+            } else {
+
+                toast(
+                    "Не удалось подключиться: " +
+                    error.type
+                );
+            }
         }
     );
 }
@@ -2798,14 +3018,14 @@ function sendToHost(data) {
     } else {
 
         toast(
-            "Нет соединения"
+            "Нет соединения с комнатой"
         );
     }
 }
 
 
 /* =========================================================
-   CREATE GAME
+   CREATE ROOM
 ========================================================= */
 
 function createRoom() {
@@ -2829,17 +3049,32 @@ function createRoom() {
         nick
     );
 
+    /*
+        Полностью закрываем старый Peer,
+        если пользователь создаёт комнату
+        повторно после ошибки.
+    */
+
+    if (peer) {
+
+        try {
+            peer.destroy();
+        } catch {}
+
+        peer = null;
+    }
+
     roomCode =
-        randomRoomCode(5);
+        randomRoomCode();
 
     isHost = true;
 
-    setupHostPeer();
+    createHostPeer();
 }
 
 
 /* =========================================================
-   COPY ROOM
+   COPY
 ========================================================= */
 
 async function copyRoomCode() {
@@ -2857,8 +3092,7 @@ async function copyRoomCode() {
     } catch {
 
         toast(
-            "Код комнаты: " +
-            roomCode
+            "Код: " + roomCode
         );
     }
 }
@@ -2870,9 +3104,31 @@ async function copyRoomCode() {
 
 function leaveGame() {
 
-    if (
-        peer
-    ) {
+    if (lobbyStartTimer) {
+
+        clearTimeout(
+            lobbyStartTimer
+        );
+
+        lobbyStartTimer =
+            null;
+    }
+
+    Object.values(
+        connections
+    ).forEach(
+        conn => {
+
+            try {
+                conn.close();
+            } catch {}
+
+        }
+    );
+
+    connections = {};
+
+    if (peer) {
 
         try {
             peer.destroy();
@@ -2881,11 +3137,11 @@ function leaveGame() {
 
     peer = null;
 
-    connections = {};
-
     game = null;
 
     roomCode = "";
+
+    myId = "";
 
     isHost = false;
 
@@ -2907,8 +3163,8 @@ function renderResult() {
 
     const winner =
         game.players.find(
-            p =>
-                p.id ===
+            player =>
+                player.id ===
                 game.winner
         );
 
@@ -2925,7 +3181,7 @@ function renderResult() {
 
     $("finalScores").innerHTML =
         sorted.map(
-            (p, index) => `
+            (player, index) => `
 
                 <div class="final-player">
 
@@ -2937,12 +3193,14 @@ function renderResult() {
                                 : ""
                         }
 
-                        ${escapeHTML(p.nick)}
+                        ${escapeHTML(
+                            player.nick
+                        )}
 
                     </div>
 
                     <strong>
-                        ${p.score}
+                        ${player.score}
                     </strong>
 
                 </div>
@@ -2953,7 +3211,7 @@ function renderResult() {
 
 
 /* =========================================================
-   BUTTONS
+   EVENTS
 ========================================================= */
 
 $("createBtn")
@@ -3001,17 +3259,16 @@ $("newGameBtn")
 $("roomInput")
     .addEventListener(
         "input",
-        e => {
+        event => {
 
-            e.target.value =
-                e.target.value
+            event.target.value =
+                event.target.value
                     .toUpperCase()
                     .replace(
                         /[^A-Z0-9]/g,
                         ""
                     )
-                    .slice(0, 6);
-
+                    .slice(0, 5);
         }
     );
 
@@ -3019,31 +3276,13 @@ $("roomInput")
 $("nickname")
     .addEventListener(
         "input",
-        e => {
+        event => {
 
             localStorage.setItem(
                 "tricko_nickname",
-                e.target.value
+                event.target.value
             );
-
         }
-    );
-
-
-/* =========================================================
-   RENDER LOOP
-========================================================= */
-
-renderTimer =
-    setInterval(
-        () => {
-
-            if (game) {
-                render();
-            }
-
-        },
-        1000
     );
 
 </script>
