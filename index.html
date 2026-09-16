@@ -2,3290 +2,798 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TRICKO — Domino</title>
-
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>TRICKO — домино на взятки</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-* {
-    box-sizing: border-box;
-}
-
-body {
+  :root{
+    --felt-0: #1c3a2c;
+    --felt-1: #234634;
+    --ivory: #f3ecd9;
+    --ivory-dim: #e4dabf;
+    --ink: #1c1a15;
+    --ink-soft: #4a463d;
+    --gold: #c8a24b;
+    --gold-bright: #e0bd6a;
+    --rose: #b5544a;
+    --line: rgba(243,236,217,0.16);
+    --radius: 10px;
+    --shadow: 0 10px 28px rgba(0,0,0,0.35);
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(ellipse at top, var(--felt-1), var(--felt-0) 70%);
+    color: var(--ivory);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f1e9;
-    color: #222;
-}
-
-button,
-input {
-    font: inherit;
-}
-
-button {
-    cursor: pointer;
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* HOME */
-
-.screen {
-    min-height: 100vh;
-}
-
-.home {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.home-card {
-    width: 100%;
-    max-width: 420px;
-    background: white;
-    border-radius: 24px;
-    padding: 32px 24px;
-    box-shadow: 0 10px 40px rgba(0,0,0,.08);
-    text-align: center;
-}
-
-.logo {
-    font-size: 56px;
-    margin-bottom: 8px;
-}
-
-.home-title {
-    font-size: 34px;
-    font-weight: 900;
-    margin-bottom: 6px;
-}
-
-.home-subtitle {
-    color: #777;
-    margin-bottom: 28px;
-}
-
-.input {
-    width: 100%;
-    height: 52px;
-    border: 1px solid #ddd;
-    border-radius: 12px;
-    padding: 0 16px;
-    outline: none;
-    margin-bottom: 12px;
-}
-
-.input:focus {
-    border-color: #236b42;
-}
-
-.btn {
-    width: 100%;
-    min-height: 50px;
-    border: 0;
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-weight: 800;
-    background: #236b42;
-    color: white;
-    margin-bottom: 10px;
-}
-
-.btn.secondary {
-    background: #eeeae1;
-    color: #222;
-}
-
-.btn.small {
-    width: auto;
-    min-height: 40px;
-    margin: 0;
-    padding: 8px 14px;
-}
-
-.home-divider {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 15px 0;
-    color: #aaa;
-    font-size: 13px;
-}
-
-.home-divider:before,
-.home-divider:after {
-    content: "";
-    height: 1px;
-    background: #eee;
-    flex: 1;
-}
-
-/* LOBBY */
-
-.lobby {
-    padding: 20px;
-}
-
-.lobby-card {
-    max-width: 600px;
-    margin: 30px auto;
-    background: white;
-    border-radius: 22px;
-    padding: 24px;
-}
-
-.lobby-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.lobby-title {
-    font-size: 25px;
-    font-weight: 900;
-}
-
-.room-code {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    background: #f3f0e8;
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 20px;
-}
-
-.room-code-value {
-    font-size: 22px;
-    font-weight: 900;
-    letter-spacing: 3px;
-}
-
-.players-title {
-    font-weight: 800;
-    margin-bottom: 10px;
-}
-
-.player-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    background: #f8f7f3;
-    border-radius: 10px;
-    margin-bottom: 8px;
-}
-
-.player-name {
-    font-weight: 700;
-}
-
-.host-label {
-    font-size: 11px;
-    color: #236b42;
-    font-weight: 800;
-}
-
-.lobby-status {
-    margin: 20px 0;
-    padding: 14px;
-    background: #f3f0e8;
-    border-radius: 12px;
-    text-align: center;
-    color: #666;
-}
-
-/* GAME */
-
-.game {
-    min-height: 100vh;
-    padding-bottom: 30px;
-}
-
-.game-header {
-    background: white;
-    padding: 12px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    box-shadow: 0 2px 10px rgba(0,0,0,.06);
-}
-
-.game-title {
-    font-size: 21px;
-    font-weight: 900;
-}
-
-.round-label {
-    font-size: 13px;
-    color: #777;
-}
-
-.game-main {
-    max-width: 760px;
+  }
+  #app{
+    max-width: 920px;
     margin: 0 auto;
-    padding: 12px;
-}
-
-/* SCORE */
-
-.scoreboard {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
-}
-
-.score-player {
-    background: white;
-    border-radius: 12px;
-    padding: 10px;
-    min-width: 0;
-}
-
-.score-player.me {
-    border: 2px solid #236b42;
-}
-
-.score-player-name {
-    font-weight: 800;
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.score {
-    font-size: 22px;
-    font-weight: 900;
-    margin-top: 5px;
-}
-
-.small {
-    font-size: 11px;
-    color: #888;
-}
-
-/* TABLE */
-
-.table {
-    background: #236b42;
-    border-radius: 22px;
-    min-height: 310px;
-    padding: 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: inset 0 0 0 4px rgba(255,255,255,.04);
-}
-
-.table-message {
-    color: white;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 18px;
-}
-
-.trick {
-    min-height: 170px;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-
-/* DOMINO */
-
-.domino {
-    width: 58px;
-    height: 112px;
-    background: white;
-    border-radius: 9px;
-    border: 1px solid #ccc;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 3px 7px rgba(0,0,0,.2);
-    flex-shrink: 0;
-}
-
-.domino-half {
-    height: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
-
-.domino-half:first-child {
-    border-bottom: 1px solid #bbb;
-}
-
-.domino-pips {
-    position: relative;
-    width: 38px;
-    height: 38px;
-}
-
-.pip {
-    width: 7px;
-    height: 7px;
-    background: #222;
-    border-radius: 50%;
-    position: absolute;
-}
-
-.p1 { left: 0; top: 0; }
-.p2 { left: 50%; top: 0; transform: translateX(-50%); }
-.p3 { right: 0; top: 0; }
-.p4 { left: 0; top: 50%; transform: translateY(-50%); }
-.p5 { left: 50%; top: 50%; transform: translate(-50%, -50%); }
-.p6 { right: 0; top: 50%; transform: translateY(-50%); }
-.p7 { left: 0; bottom: 0; }
-.p8 { left: 50%; bottom: 0; transform: translateX(-50%); }
-.p9 { right: 0; bottom: 0; }
-
-.hand {
-    display: flex;
-    gap: 7px;
-    overflow-x: auto;
-    padding: 14px 2px 8px;
-    justify-content: center;
-}
-
-.hand .domino {
-    cursor: pointer;
-    transition: transform .15s;
-}
-
-.hand .domino:hover {
-    transform: translateY(-5px);
-}
-
-.hand .domino.disabled {
-    opacity: .4;
-    cursor: default;
-}
-
-/* STATS */
-
-.info-panel {
-    margin-top: 12px;
-}
-
-.player-stats {
-    background: white;
-    border-radius: 16px;
-    padding: 14px;
-}
-
-.player-stats-title {
-    font-weight: 800;
-    margin-bottom: 10px;
-}
-
-.player-stat {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 10px 8px;
-    border-bottom: 1px solid #eee;
-}
-
-.player-stat:last-child {
-    border-bottom: 0;
-}
-
-.player-stat.current {
-    background: #f3f0e8;
-    border-radius: 10px;
-}
-
-.player-stat-left {
-    min-width: 0;
-}
-
-.player-stat-name {
-    font-weight: 700;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.player-stat-status {
-    font-size: 11px;
-    color: #888;
-    margin-top: 2px;
-}
-
-.player-stat-right {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
-.stat-badge {
-    padding: 5px 8px;
-    border-radius: 7px;
-    background: #eeeae1;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.stat-badge.bid {
-    font-weight: 800;
-}
-
-.stat-badge.tricks {
-    background: #236b42;
-    color: white;
-    font-weight: 800;
-}
-
-.stat-badge.pending {
-    color: #888;
-    font-weight: 400;
-}
-
-/* BIDS */
-
-.bid-area {
-    background: white;
-    border-radius: 16px;
-    padding: 14px;
-    margin-top: 12px;
-}
-
-.bid-title {
-    font-weight: 800;
-    margin-bottom: 10px;
-    text-align: center;
-}
-
-.bid-buttons {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 7px;
-}
-
-.bid-button {
-    border: 0;
-    background: #eeeae1;
-    border-radius: 9px;
-    min-height: 42px;
-    font-weight: 900;
-}
-
-.bid-button:hover {
-    background: #236b42;
-    color: white;
-}
-
-.waiting {
-    text-align: center;
-    color: #777;
-    padding: 10px;
-}
-
-/* RESULT */
-
-.result {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.result-card {
-    width: 100%;
-    max-width: 500px;
-    background: white;
-    border-radius: 24px;
-    padding: 30px 22px;
-    text-align: center;
-}
-
-.result-trophy {
-    font-size: 60px;
-}
-
-.result-title {
-    font-size: 30px;
-    font-weight: 900;
-    margin: 10px 0;
-}
-
-.result-winner {
-    font-size: 20px;
-    font-weight: 800;
-    color: #236b42;
-    margin-bottom: 20px;
-}
-
-.final-player {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px;
-    border-bottom: 1px solid #eee;
-}
-
-.final-player-name {
-    font-weight: 700;
-}
-
-/* TOAST */
-
-.toast {
-    position: fixed;
-    left: 50%;
-    bottom: 20px;
-    transform: translateX(-50%);
-    background: #222;
-    color: white;
-    padding: 12px 18px;
-    border-radius: 12px;
-    font-size: 14px;
-    z-index: 100;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .2s;
-}
-
-.toast.show {
-    opacity: 1;
-}
-
-/* MOBILE */
-
-@media (max-width: 600px) {
-
-    .home-card {
-        padding: 26px 18px;
-    }
-
-    .scoreboard {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .table {
-        min-height: 260px;
-    }
-
-    .trick {
-        min-height: 130px;
-    }
-
-    .domino {
-        width: 50px;
-        height: 96px;
-    }
-
-    .hand {
-        justify-content: flex-start;
-    }
-
-    .player-stat {
-        padding: 9px 4px;
-    }
-
-    .player-stat-right {
-        gap: 4px;
-    }
-
-    .stat-badge {
-        padding: 4px 6px;
-        font-size: 11px;
-    }
-}
+    padding: 28px 18px 60px;
+  }
+  .brand{
+    display:flex; align-items:baseline; gap:10px; justify-content:center;
+    margin-bottom: 26px;
+  }
+  .brand .display{ font-size: 2.1rem; color: var(--gold-bright); }
+  .brand .sub{ color: var(--ivory-dim); font-size: 0.85rem; }
+
+  .panel{
+    background: rgba(23,45,34,0.62);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .panel + .panel{ margin-top: 16px; }
+
+  label{ display:block; font-size:0.8rem; color: var(--ivory-dim); margin-bottom:6px; }
+  input[type=text]{
+    width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--line);
+    background: rgba(0,0,0,0.22); color: var(--ivory); font-size:1rem; font-family: inherit;
+  }
+  input[type=text]:focus{ outline:2px solid var(--gold); outline-offset:1px; }
+  input[type=text]::placeholder{ color: rgba(243,236,217,0.35); }
+
+  .row{ display:flex; gap:12px; flex-wrap:wrap; }
+  .row > *{ flex:1; min-width:180px; }
+
+  button{
+    font-family:inherit; font-size:0.95rem; font-weight:600; cursor:pointer;
+    border-radius: 8px; border: 1px solid transparent; padding: 11px 18px;
+    transition: transform .08s ease, filter .12s ease;
+  }
+  button:active{ transform: translateY(1px); }
+  button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn-gold{ background: linear-gradient(180deg, var(--gold-bright), var(--gold)); color:#221a08; }
+  .btn-gold:hover:not(:disabled){ filter: brightness(1.06); }
+  .btn-ghost{ background: transparent; color: var(--ivory); border-color: var(--line); }
+  .btn-ghost:hover:not(:disabled){ background: rgba(243,236,217,0.08); }
+  .btn-small{ padding: 7px 12px; font-size: 0.82rem; }
+
+  .code-display{
+    font-family:'Fraunces', serif; font-size: 2rem; letter-spacing: 0.12em;
+    color: var(--gold-bright); text-align:center; padding: 10px 0;
+  }
+  .hint{ color: var(--ivory-dim); font-size: 0.85rem; line-height:1.5; }
+  .error-box{
+    background: rgba(181,84,74,0.18); border:1px solid rgba(181,84,74,0.5);
+    color:#f2c9c4; padding:10px 13px; border-radius:8px; font-size:0.88rem; margin-top:10px;
+  }
+
+  .player-chip-list{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+  .player-chip{
+    background: rgba(0,0,0,0.25); border:1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px; font-size:0.88rem; display:flex; align-items:center; gap:6px;
+  }
+  .player-chip .tag{ font-size:0.7rem; color: var(--gold-bright); }
+
+  /* --- in-game top bar --- */
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px; flex-wrap:wrap; gap:8px;}
+  .topbar .room{ font-size:0.82rem; color: var(--ivory-dim); }
+  .topbar .phase{ font-size:0.82rem; color: var(--gold-bright); text-transform: none; }
+
+  .board{
+    display:grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+    gap:10px; margin-bottom:16px;
+  }
+  .seat{
+    background: rgba(0,0,0,0.24); border:1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; position:relative;
+  }
+  .seat.active{ border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+  .seat.you::after{
+    content:"вы"; position:absolute; top:10px; right:12px; font-size:0.68rem; color: var(--ivory-dim);
+  }
+  .seat .name{ font-weight:600; font-size:1rem; margin-bottom:6px; }
+  .seat .score{ font-family:'Fraunces',serif; font-size:1.5rem; color: var(--gold-bright); }
+  .seat .stat-line{ margin-top:6px; font-size:0.82rem; color: var(--ivory-dim); display:flex; gap:10px; }
+  .seat .stat-line b{ color: var(--ivory); font-weight:600; }
+  .seat .last-round{ margin-top:4px; font-size:0.76rem; }
+  .seat .last-round.pos{ color:#8fd6a6; }
+  .seat .last-round.neg{ color:#e39c94; }
+
+  .trick-area{
+    min-height: 130px; display:flex; align-items:center; justify-content:center; gap:16px;
+    background: rgba(0,0,0,0.18); border-radius: var(--radius); border:1px dashed var(--line);
+    padding: 16px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .trick-slot{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .trick-slot .who{ font-size:0.74rem; color: var(--ivory-dim); }
+  .trick-empty{ color: var(--ivory-dim); font-size:0.85rem; }
+
+  /* domino tile */
+  .domino{
+    display:flex; background: var(--ivory); border-radius:6px; box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,0,0,0.2); overflow:hidden;
+  }
+  .domino.trump{ box-shadow: 0 0 0 2px var(--gold), 0 3px 8px rgba(0,0,0,0.4); }
+  .domino-half{
+    width:34px; height:34px; display:grid; grid-template-columns: repeat(3,1fr); grid-template-rows: repeat(3,1fr);
+    padding:4px;
+  }
+  .domino-half + .domino-half{ border-left: 1px solid rgba(0,0,0,0.25); }
+  .pip{ border-radius:50%; }
+  .pip.on{ background: var(--ink); margin:auto; width:5px; height:5px; }
+  .domino.big .domino-half{ width:46px; height:46px; padding:5px; }
+  .domino.big .pip.on{ width:7px; height:7px; }
+
+  .hand-row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; padding: 6px 0 2px; }
+  .hand-tile-btn{ background:none; border:none; padding:0; border-radius:6px; cursor:pointer; }
+  .hand-tile-btn:disabled{ cursor:default; opacity:0.55; }
+  .hand-tile-btn:not(:disabled):hover .domino{ transform: translateY(-4px); box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+  .hand-tile-btn .domino{ transition: transform .1s ease, box-shadow .1s ease; }
+
+  .bid-grid{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px; }
+  .bid-btn{
+    width:44px; height:44px; border-radius:50%; background: rgba(0,0,0,0.25);
+    border:1px solid var(--line); color: var(--ivory); font-weight:700; font-size:1rem;
+  }
+  .bid-btn:hover:not(:disabled){ border-color: var(--gold); color: var(--gold-bright); }
+
+  .center-note{ text-align:center; color: var(--ivory-dim); font-size:0.9rem; margin: 8px 0 4px; }
+  .center-note b{ color: var(--gold-bright); }
+
+  .result-table{ width:100%; border-collapse: collapse; margin-top:8px; }
+  .result-table th, .result-table td{ text-align:left; padding:8px 10px; font-size:0.88rem; border-bottom:1px solid var(--line); }
+  .result-table th{ color: var(--ivory-dim); font-weight:500; font-size:0.76rem; }
+
+  .final-winner{ text-align:center; padding: 10px 0 4px; }
+  .final-winner .display{ font-size:1.9rem; color: var(--gold-bright); }
+
+  .footer-note{ text-align:center; color: rgba(243,236,217,0.4); font-size:0.76rem; margin-top:28px; }
+
+  @media (max-width: 480px){
+    .brand .display{ font-size:1.6rem; }
+    .domino-half{ width:28px; height:28px; }
+    .domino.big .domino-half{ width:38px; height:38px; }
+  }
 </style>
 </head>
-
 <body>
+<div id="app"></div>
 
-<div id="homeScreen" class="screen home">
-    <div class="home-card">
-
-        <div class="logo">🀄</div>
-        <div class="home-title">TRICKO</div>
-        <div class="home-subtitle">Bid. Play. Take.</div>
-
-        <input
-            id="nickname"
-            class="input"
-            maxlength="20"
-            placeholder="Ваше имя"
-        >
-
-        <button id="createBtn" class="btn">
-            Создать игру
-        </button>
-
-        <div class="home-divider">или</div>
-
-        <input
-            id="roomInput"
-            class="input"
-            maxlength="5"
-            placeholder="Код игры"
-            style="text-transform:uppercase"
-        >
-
-        <button id="joinBtn" class="btn secondary">
-            Войти в игру
-        </button>
-
-    </div>
-</div>
-
-
-<div id="lobbyScreen" class="screen lobby hidden">
-
-    <div class="lobby-card">
-
-        <div class="lobby-header">
-
-            <div class="lobby-title">
-                Комната
-            </div>
-
-            <button
-                id="leaveLobbyBtn"
-                class="btn small secondary"
-            >
-                Выйти
-            </button>
-
-        </div>
-
-        <div class="room-code">
-
-            <div>
-                <div class="small">Код игры</div>
-                <div
-                    id="roomCode"
-                    class="room-code-value"
-                ></div>
-            </div>
-
-            <button
-                id="copyRoomBtn"
-                class="btn small"
-            >
-                Копировать
-            </button>
-
-        </div>
-
-        <div class="players-title">
-            Игроки
-        </div>
-
-        <div id="lobbyPlayers"></div>
-
-        <div
-            id="lobbyStatus"
-            class="lobby-status"
-        >
-            Ожидание игроков...
-        </div>
-
-    </div>
-
-</div>
-
-
-<div id="gameScreen" class="screen game hidden">
-
-    <div class="game-header">
-
-        <div>
-
-            <div class="game-title">
-                TRICKO
-            </div>
-
-            <div
-                id="roundLabel"
-                class="round-label"
-            ></div>
-
-        </div>
-
-        <button
-            id="leaveGameBtn"
-            class="btn small secondary"
-        >
-            Выйти
-        </button>
-
-    </div>
-
-    <div class="game-main">
-
-        <div
-            id="scoreboard"
-            class="scoreboard"
-        ></div>
-
-        <div class="table">
-
-            <div
-                id="tableMessage"
-                class="table-message"
-            ></div>
-
-            <div
-                id="trick"
-                class="trick"
-            ></div>
-
-        </div>
-
-        <div
-            id="hand"
-            class="hand"
-        ></div>
-
-        <div
-            id="bidArea"
-            class="bid-area"
-        ></div>
-
-        <div
-            id="roundInfoPanel"
-            class="info-panel"
-        ></div>
-
-    </div>
-
-</div>
-
-
-<div id="resultScreen" class="screen result hidden">
-
-    <div class="result-card">
-
-        <div class="result-trophy">
-            🏆
-        </div>
-
-        <div class="result-title">
-            Игра окончена
-        </div>
-
-        <div
-            id="winner"
-            class="result-winner"
-        ></div>
-
-        <div id="finalScores"></div>
-
-        <button
-            id="newGameBtn"
-            class="btn"
-        >
-            Новая игра
-        </button>
-
-    </div>
-
-</div>
-
-
-<div id="toast" class="toast"></div>
-
-
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
+/* =====================================================================
+   TRICKO — домино на взятки. Host-авторитетная логика поверх PeerJS.
+   ===================================================================== */
 
-/* =========================================================
-   STATE
-========================================================= */
-
-let peer = null;
-let isHost = false;
-
-let roomCode = "";
-let myId = "";
-
-let connections = {};
-
-let game = null;
-
-let lobbyStartTimer = null;
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function $(id) {
-    return document.getElementById(id);
+/* ---------- домино: утилиты ---------- */
+function allTiles(){
+  const t = [];
+  for(let a=0;a<=6;a++) for(let b=a;b<=6;b++) t.push([a,b]);
+  return t; // 28 костей
+}
+function isDouble(tile){ return tile[0]===tile[1]; }
+const TRUMP_RANK = {1:7,2:6,3:5,4:4,5:3,6:2,0:1}; // выше = сильнее
+function tileStrength(tile){
+  if(isDouble(tile)) return { trump:true, rank: TRUMP_RANK[tile[0]] };
+  return { trump:false, sum: tile[0]+tile[1] };
+}
+// возвращает true если entry a бьёт entry b ({tile, playIndex})
+function beats(a,b){
+  const sa=tileStrength(a.tile), sb=tileStrength(b.tile);
+  if(sa.trump !== sb.trump) return sa.trump;
+  if(sa.trump && sb.trump) return sa.rank > sb.rank;
+  if(sa.sum !== sb.sum) return sa.sum > sb.sum;
+  return a.playIndex < b.playIndex; // при равенстве раньше сыгранная сильнее
+}
+function findTrickWinner(entries){
+  let w = entries[0];
+  for(let i=1;i<entries.length;i++) if(beats(entries[i], w)) w = entries[i];
+  return w;
+}
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function buildSchedule(numPlayers){
+  const seq = [1,2,3,4,5,6];
+  for(let i=1;i<numPlayers;i++) seq.push(6);
+  seq.push(5,4,3,2,1,6);
+  return seq;
+}
+function rotateOrder(n, start){
+  const arr=[]; for(let i=0;i<n;i++) arr.push((start+i)%n); return arr;
+}
+function randomRoomCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s='TRK-';
+  for(let i=0;i<5;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
 }
 
-
-function escapeHTML(value) {
-
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+/* ---------- domino tile rendering ---------- */
+const PIP_PATTERNS = {
+  0: [], 1:[4], 2:[0,8], 3:[0,4,8], 4:[0,2,6,8], 5:[0,2,4,6,8], 6:[0,1,2,6,7,8]
+};
+function renderTileHTML(tile, opts){
+  opts = opts || {};
+  const cls = 'domino' + (opts.big ? ' big' : '') + (isDouble(tile) ? ' trump' : '');
+  const half = v => {
+    const on = new Set(PIP_PATTERNS[v]);
+    let cells = '';
+    for(let i=0;i<9;i++) cells += `<div class="pip ${on.has(i)?'on':''}"></div>`;
+    return `<div class="domino-half">${cells}</div>`;
+  };
+  return `<div class="${cls}">${half(tile[0])}${half(tile[1])}</div>`;
 }
 
+/* =====================================================================
+   Общее состояние процесса (и хоста, и клиента)
+   ===================================================================== */
+const Net = {
+  peer: null,
+  isHost: false,
+  roomCode: null,
+  myNickname: '',
+  myId: null,
+  hostConn: null,       // клиент -> host connection
+};
 
-function toast(text) {
+/* ---------- HOST-only игровое состояние ---------- */
+const Host = {
+  players: [],          // {id, nickname, conn, isHost, hand, score, bid, tricksTaken, lastRoundScore}
+  schedule: [],
+  roundIndex: 0,
+  firstBidderIndex: 0,
+  biddingOrder: [], biddingTurnPtr: 0,
+  playOrder: [], playTurnPtr: 0,
+  trick: [],
+  trickLeaderIndex: 0,
+  tricksPlayedInRound: 0,
+  lastTrickWinnerId: null,
+  winnerId: null,
+  phase: 'LOBBY',        // LOBBY | BIDDING | PLAYING | TRICK_RESULT | ROUND_RESULT | FINISHED
+};
 
-    const el = $("toast");
+/* ---------- локальное состояние UI (и хоста, и клиента одинаково) ---------- */
+let UI = {
+  screen: 'start',       // start | lobby | game
+  errorMsg: '',
+  publicState: null,     // последнее полученное/построенное публичное состояние
+  myHand: [],
+};
 
-    el.textContent = text;
-
-    el.classList.add("show");
-
-    clearTimeout(el._timer);
-
-    el._timer = setTimeout(() => {
-        el.classList.remove("show");
-    }, 2500);
+/* =====================================================================
+   HOST: построение публичного состояния и рассылка
+   ===================================================================== */
+function buildPublicState(){
+  return {
+    phase: Host.phase,
+    roomCode: Net.roomCode,
+    players: Host.players.map(p => ({
+      id: p.id, nickname: p.nickname, score: p.score,
+      bid: p.bid, tricksTaken: p.tricksTaken, handCount: p.hand.length,
+      lastRoundScore: p.lastRoundScore
+    })),
+    handSize: Host.schedule[Host.roundIndex] || null,
+    roundNumber: Host.roundIndex + 1,
+    totalRounds: Host.schedule.length,
+    firstBidderId: Host.players[Host.firstBidderIndex] ? Host.players[Host.firstBidderIndex].id : null,
+    biddingTurnPlayerId: Host.phase==='BIDDING' ? (Host.players[Host.biddingOrder[Host.biddingTurnPtr]]||{}).id : null,
+    playTurnPlayerId: Host.phase==='PLAYING' ? (Host.players[Host.playOrder[Host.playTurnPtr]]||{}).id : null,
+    trick: Host.trick.map(e => ({ playerId: e.playerId, tile: e.tile })),
+    lastTrickWinnerId: Host.lastTrickWinnerId,
+    winnerId: Host.winnerId,
+    errorMsg: null,
+  };
 }
-
-
-function showScreen(id) {
-
-    [
-        "homeScreen",
-        "lobbyScreen",
-        "gameScreen",
-        "resultScreen"
-    ].forEach(screen => {
-        $(screen).classList.add("hidden");
-    });
-
-    $(id).classList.remove("hidden");
-}
-
-
-/* =========================================================
-   NICKNAME
-========================================================= */
-
-$("nickname").value =
-    localStorage.getItem(
-        "tricko_nickname"
-    ) || "";
-
-
-/* =========================================================
-   ROOM CODE
-========================================================= */
-
-function randomRoomCode() {
-
-    const chars =
-        "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-    let result = "";
-
-    for (let i = 0; i < 5; i++) {
-
-        result += chars[
-            Math.floor(
-                Math.random() * chars.length
-            )
-        ];
-    }
-
-    return result;
-}
-
-
-/* =========================================================
-   DECK
-========================================================= */
-
-function createDeck() {
-
-    const deck = [];
-
-    let id = 0;
-
-    for (let a = 0; a <= 6; a++) {
-
-        for (let b = a; b <= 6; b++) {
-
-            deck.push({
-                id: id++,
-                a,
-                b
-            });
-
-        }
-    }
-
-    return deck;
-}
-
-
-function shuffle(array) {
-
-    const result = [...array];
-
-    for (
-        let i = result.length - 1;
-        i > 0;
-        i--
-    ) {
-
-        const j =
-            Math.floor(
-                Math.random() * (i + 1)
-            );
-
-        [
-            result[i],
-            result[j]
-        ] = [
-            result[j],
-            result[i]
-        ];
-    }
-
-    return result;
-}
-
-
-/* =========================================================
-   TILE STRENGTH
-========================================================= */
-
-function isTrump(tile) {
-
-    return tile.a === tile.b;
-}
-
-
-function trumpRank(tile) {
-
-    if (!isTrump(tile))
-        return 0;
-
-    return {
-        1: 7,
-        2: 6,
-        3: 5,
-        4: 4,
-        5: 3,
-        6: 2,
-        0: 1
-    }[tile.a];
-}
-
-
-function tileStrength(tile) {
-
-    if (isTrump(tile)) {
-
-        return 100 +
-            trumpRank(tile);
-    }
-
-    return tile.a + tile.b;
-}
-
-
-/*
-    При одинаковой силе побеждает
-    тот, кто сыграл раньше.
-*/
-
-function compareTiles(newTile, oldTile) {
-
-    return tileStrength(newTile) >
-        tileStrength(oldTile);
-}
-
-
-/* =========================================================
-   ROUND SEQUENCE
-========================================================= */
-
-function getRoundSizes(playerCount) {
-
-    return [
-        1, 2, 3, 4, 5,
-
-        ...Array(playerCount).fill(6),
-
-        5, 4, 3, 2, 1,
-
-        6
-    ];
-}
-
-
-/* =========================================================
-   GAME STATE
-========================================================= */
-
-function createGameState() {
-
-    return {
-
-        players: [],
-
-        roundIndex: 0,
-        roundTotal: 0,
-
-        phase: "lobby",
-
-        firstBidder: 0,
-        currentPlayer: 0,
-
-        trick: [],
-        trickNumber: 0,
-
-        lastTrickWinner: null,
-
-        winner: null
-
-    };
-}
-
-
-/* =========================================================
-   PUBLIC STATE
-========================================================= */
-
-function publicGameState() {
-
-    return {
-
-        players:
-            game.players.map(player => ({
-
-                id: player.id,
-                nick: player.nick,
-
-                score: player.score,
-                roundScore:
-                    player.roundScore,
-
-                bid: player.bid,
-                tricks: player.tricks,
-
-                connected:
-                    player.connected,
-
-                handCount:
-                    player.hand.length
-
-            })),
-
-        roundIndex:
-            game.roundIndex,
-
-        roundTotal:
-            game.roundTotal,
-
-        phase:
-            game.phase,
-
-        firstBidder:
-            game.firstBidder,
-
-        currentPlayer:
-            game.currentPlayer,
-
-        trick:
-            game.trick,
-
-        trickNumber:
-            game.trickNumber,
-
-        lastTrickWinner:
-            game.lastTrickWinner,
-
-        winner:
-            game.winner
-    };
-}
-
-
-/* =========================================================
-   SEND STATE
-========================================================= */
-
-/*
-    КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
-
-    Раньше здесь состояние хоста заменялось
-    publicGameState(), из-за чего хост терял руки.
-
-    Теперь хост НЕ получает public state обратно.
-
-    Хост хранит полное авторитетное состояние.
-*/
-
-function sendFullState() {
-
-    if (!isHost || !game)
-        return;
-
-    const publicState =
-        publicGameState();
-
-    game.players.forEach(
-        player => {
-
-            if (
-                player.id === myId
-            ) {
-
-                /*
-                    Ничего не перезаписываем.
-
-                    У хоста уже есть:
-
-                    game.players[i].hand
-
-                    и это настоящее состояние игры.
-                */
-
-                render();
-
-                return;
-            }
-
-            const conn =
-                connections[player.id];
-
-            if (
-                conn &&
-                conn.open
-            ) {
-
-                conn.send({
-
-                    type: "state",
-
-                    game: publicState,
-
-                    myHand:
-                        player.hand,
-
-                    myId:
-                        player.id
-                });
-            }
-        }
-    );
-
+function sendTo(player, msg){
+  if(player.isHost){
+    UI.publicState = msg.publicState;
+    UI.myHand = msg.yourHand;
+    UI.screen = 'game';
     render();
+  } else if(player.conn && player.conn.open){
+    player.conn.send(msg);
+  }
+}
+function broadcastState(){
+  const pub = buildPublicState();
+  Host.players.forEach(p => sendTo(p, { type:'state', publicState: pub, yourHand: p.hand }));
+}
+function sendErrorTo(player, msg){
+  if(player.isHost){ UI.errorMsg = msg; render(); }
+  else if(player.conn && player.conn.open){ player.conn.send({type:'error', message: msg}); }
 }
 
+/* =====================================================================
+   HOST: игровой процесс
+   ===================================================================== */
+function hostAddPlayer(id, nickname, conn){
+  if(Host.phase !== 'LOBBY'){
+    if(conn) conn.send({type:'error', message:'Игра уже началась — присоединиться нельзя.'});
+    return;
+  }
+  if(Host.players.length >= 4){
+    if(conn) conn.send({type:'error', message:'В комнате уже 4 игрока.'});
+    return;
+  }
+  nickname = (nickname||'Игрок').trim().slice(0,18) || 'Игрок';
+  Host.players.push({ id, nickname, conn: conn||null, isHost: !conn,
+    hand:[], score:0, bid:null, tricksTaken:0, lastRoundScore:null });
+  broadcastState();
+}
+function hostRemovePlayer(id){
+  const idx = Host.players.findIndex(p=>p.id===id);
+  if(idx===-1) return;
+  Host.players.splice(idx,1);
+  if(Host.phase !== 'LOBBY'){
+    // упрощённо: игра продолжает без выбывшего игрока не поддерживается — оставляем как есть,
+    // достаточно для игры с друзьями, которые не выходят посреди партии.
+  }
+  broadcastState();
+}
+function hostStartGame(){
+  if(Host.players.length < 2){ sendErrorTo(Host.players.find(p=>p.isHost), 'Нужно минимум 2 игрока.'); return; }
+  Host.schedule = buildSchedule(Host.players.length);
+  Host.roundIndex = 0;
+  Host.firstBidderIndex = 0;
+  Host.players.forEach(p=>{ p.score = 0; p.lastRoundScore=null; });
+  hostStartRound();
+}
+function hostStartRound(){
+  const handSize = Host.schedule[Host.roundIndex];
+  const deck = shuffle(allTiles());
+  let idx = 0;
+  Host.players.forEach(p=>{
+    p.hand = deck.slice(idx, idx+handSize);
+    idx += handSize;
+    p.bid = null; p.tricksTaken = 0;
+  });
+  Host.phase = 'BIDDING';
+  Host.biddingOrder = rotateOrder(Host.players.length, Host.firstBidderIndex);
+  Host.biddingTurnPtr = 0;
+  Host.trick = [];
+  Host.lastTrickWinnerId = null;
+  broadcastState();
+}
+function hostProcessBid(playerId, value){
+  if(Host.phase !== 'BIDDING') return;
+  const expIdx = Host.biddingOrder[Host.biddingTurnPtr];
+  const p = Host.players[expIdx];
+  if(!p || p.id !== playerId) return;
+  const handSize = Host.schedule[Host.roundIndex];
+  value = Number(value);
+  if(!Number.isInteger(value) || value<0 || value>handSize) return;
+  p.bid = value;
+  Host.biddingTurnPtr++;
+  if(Host.biddingTurnPtr >= Host.players.length){
+    Host.phase = 'PLAYING';
+    Host.trickLeaderIndex = Host.firstBidderIndex;
+    Host.tricksPlayedInRound = 0;
+    Host.trick = [];
+    Host.playOrder = rotateOrder(Host.players.length, Host.trickLeaderIndex);
+    Host.playTurnPtr = 0;
+  }
+  broadcastState();
+}
+function hostProcessPlay(playerId, tile){
+  if(Host.phase !== 'PLAYING') return;
+  const expIdx = Host.playOrder[Host.playTurnPtr];
+  const p = Host.players[expIdx];
+  if(!p || p.id !== playerId) return;
+  const hIdx = p.hand.findIndex(t => t[0]===tile[0] && t[1]===tile[1]);
+  if(hIdx === -1) return;
+  p.hand.splice(hIdx,1);
+  Host.trick.push({ playerId, playerIndex: expIdx, tile, playIndex: Host.trick.length });
+  Host.playTurnPtr++;
+  if(Host.playTurnPtr >= Host.players.length){
+    Host.phase = 'TRICK_RESULT';
+    const winnerEntry = findTrickWinner(Host.trick);
+    const winnerPlayer = Host.players[winnerEntry.playerIndex];
+    winnerPlayer.tricksTaken++;
+    Host.lastTrickWinnerId = winnerPlayer.id;
+    broadcastState();
+    setTimeout(hostAfterTrickResult, 1900);
+  } else {
+    broadcastState();
+  }
+}
+function hostAfterTrickResult(){
+  const winnerEntry = findTrickWinner(Host.trick);
+  Host.tricksPlayedInRound++;
+  Host.trick = [];
+  const handSize = Host.schedule[Host.roundIndex];
+  if(Host.tricksPlayedInRound >= handSize){
+    hostFinishRound();
+  } else {
+    Host.trickLeaderIndex = winnerEntry.playerIndex;
+    Host.playOrder = rotateOrder(Host.players.length, Host.trickLeaderIndex);
+    Host.playTurnPtr = 0;
+    Host.phase = 'PLAYING';
+    broadcastState();
+  }
+}
+function hostFinishRound(){
+  Host.phase = 'ROUND_RESULT';
+  Host.players.forEach(p=>{
+    let rs;
+    if(p.bid === 0 && p.tricksTaken === 0) rs = 5;
+    else if(p.bid > 0 && p.tricksTaken === p.bid) rs = 10*p.bid;
+    else if(p.tricksTaken > p.bid) rs = p.tricksTaken;
+    else rs = -10*p.bid;
+    p.lastRoundScore = rs;
+    p.score += rs;
+  });
+  broadcastState();
+  setTimeout(hostAfterRoundResult, 2800);
+}
+function hostAfterRoundResult(){
+  Host.roundIndex++;
+  Host.firstBidderIndex = (Host.firstBidderIndex+1) % Host.players.length;
+  if(Host.roundIndex >= Host.schedule.length){
+    hostCheckGameEnd();
+  } else {
+    hostStartRound();
+  }
+}
+function hostCheckGameEnd(){
+  const maxScore = Math.max(...Host.players.map(p=>p.score));
+  const leaders = Host.players.filter(p=>p.score===maxScore);
+  if(leaders.length === 1){
+    Host.phase = 'FINISHED';
+    Host.winnerId = leaders[0].id;
+    broadcastState();
+  } else {
+    Host.schedule.push(6);
+    hostStartRound();
+  }
+}
+function hostRestart(){
+  Host.phase = 'LOBBY';
+  Host.players.forEach(p=>{ p.score=0; p.bid=null; p.tricksTaken=0; p.hand=[]; p.lastRoundScore=null; });
+  Host.winnerId = null; Host.lastTrickWinnerId = null; Host.trick=[];
+  broadcastState();
+}
 
-/* =========================================================
-   CLIENT STATE
-========================================================= */
-
-function receiveState(payload) {
-
-    if (
-        !payload ||
-        !payload.game
-    ) {
-        return;
-    }
-
-    /*
-        Для клиента сохраняем только
-        публичную часть + свою руку.
-    */
-
-    game = {
-
-        ...payload.game,
-
-        myHand:
-            Array.isArray(payload.myHand)
-                ? payload.myHand
-                : (
-                    game?.myHand || []
-                )
-    };
-
-    myId =
-        payload.myId ||
-        myId;
-
+/* =====================================================================
+   PeerJS wiring
+   ===================================================================== */
+function hostHandleData(conn, data){
+  if(data.type === 'join'){
+    hostAddPlayer(conn.peer, data.nickname, conn);
+  } else if(data.type === 'bid'){
+    hostProcessBid(conn.peer, data.value);
+  } else if(data.type === 'playTile'){
+    hostProcessPlay(conn.peer, data.tile);
+  }
+}
+function createRoom(nickname){
+  UI.errorMsg = '';
+  Net.isHost = true;
+  Net.myNickname = nickname;
+  Net.roomCode = randomRoomCode();
+  Net.peer = new Peer(Net.roomCode, { debug: 0 });
+  Net.peer.on('open', id => {
+    Net.myId = id;
+    hostAddPlayer(id, nickname, null); // host сам как игрок
+    UI.screen = 'lobby';
     render();
+  });
+  Net.peer.on('connection', conn => {
+    conn.on('data', data => hostHandleData(conn, data));
+    conn.on('close', () => hostRemovePlayer(conn.peer));
+  });
+  Net.peer.on('error', err => {
+    UI.errorMsg = 'Ошибка соединения: ' + (err && err.type ? err.type : err);
+    render();
+  });
 }
-
-
-/* =========================================================
-   START ROUND
-========================================================= */
-
-function startRound() {
-
-    if (!isHost)
-        return;
-
-    const count =
-        game.players.length;
-
-    const rounds =
-        getRoundSizes(count);
-
-    game.roundTotal =
-        rounds.length;
-
-    const handSize =
-        rounds[
-            game.roundIndex
-        ] || 6;
-
-    game.firstBidder =
-        game.roundIndex % count;
-
-    game.currentPlayer =
-        game.firstBidder;
-
-    game.phase =
-        "bidding";
-
-    game.trick = [];
-
-    game.trickNumber = 0;
-
-    game.lastTrickWinner =
-        null;
-
-    const deck =
-        shuffle(createDeck());
-
-    game.players.forEach(
-        player => {
-
-            player.hand =
-                deck.splice(
-                    0,
-                    handSize
-                );
-
-            player.bid = null;
-
-            player.tricks = 0;
-
-            player.roundScore = 0;
-        }
-    );
-
-    sendFullState();
-
-    toast(
-        `Раунд ${game.roundIndex + 1}: сделайте ставку`
-    );
-}
-
-
-/* =========================================================
-   BIDDING
-========================================================= */
-
-function hostReceiveBid(
-    playerId,
-    value
-) {
-
-    if (
-        !isHost ||
-        !game ||
-        game.phase !== "bidding"
-    ) {
-        return;
-    }
-
-    const index =
-        game.players.findIndex(
-            player =>
-                player.id === playerId
-        );
-
-    if (index === -1)
-        return;
-
-    if (
-        index !==
-        game.currentPlayer
-    ) {
-        return;
-    }
-
-    const player =
-        game.players[index];
-
-    value =
-        Number(value);
-
-    if (
-        !Number.isInteger(value) ||
-        value < 0 ||
-        value > player.hand.length
-    ) {
-        return;
-    }
-
-    player.bid = value;
-
-    /*
-        Находим следующего,
-        кто ещё не ставил.
-    */
-
-    const next =
-        game.players.findIndex(
-            player =>
-                player.bid === null
-        );
-
-    if (next === -1) {
-
-        /*
-            Все ставки сделаны.
-
-            Важно: сначала отправляем
-            состояние со всеми ставками,
-            затем начинаем игру.
-        */
-
-        sendFullState();
-
-        setTimeout(() => {
-
-            startTrickPlay();
-
-        }, 250);
-
-        return;
-    }
-
-    game.currentPlayer =
-        next;
-
-    /*
-        Здесь новая ставка сразу
-        появляется у всех.
-    */
-
-    sendFullState();
-}
-
-
-/* =========================================================
-   START PLAY
-========================================================= */
-
-function startTrickPlay() {
-
-    if (!isHost)
-        return;
-
-    game.phase =
-        "playing";
-
-    game.trick = [];
-
-    game.trickNumber = 0;
-
-    game.currentPlayer =
-        game.firstBidder;
-
-    sendFullState();
-}
-
-
-/* =========================================================
-   PLAY
-========================================================= */
-
-function hostReceivePlay(
-    playerId,
-    tileId
-) {
-
-    if (
-        !isHost ||
-        !game ||
-        game.phase !== "playing"
-    ) {
-        return;
-    }
-
-    const playerIndex =
-        game.players.findIndex(
-            player =>
-                player.id === playerId
-        );
-
-    if (playerIndex === -1)
-        return;
-
-    if (
-        playerIndex !==
-        game.currentPlayer
-    ) {
-        return;
-    }
-
-    const player =
-        game.players[playerIndex];
-
-    const tileIndex =
-        player.hand.findIndex(
-            tile =>
-                tile.id === tileId
-        );
-
-    if (tileIndex === -1)
-        return;
-
-    const tile =
-        player.hand[tileIndex];
-
-    player.hand.splice(
-        tileIndex,
-        1
-    );
-
-    game.trick.push({
-
-        playerIndex,
-
-        tile
+function joinRoom(nickname, code){
+  UI.errorMsg = '';
+  Net.isHost = false;
+  Net.myNickname = nickname;
+  Net.roomCode = code.trim().toUpperCase();
+  Net.peer = new Peer({ debug: 0 });
+  Net.peer.on('open', id => {
+    Net.myId = id;
+    const conn = Net.peer.connect(Net.roomCode, { reliable: true });
+    Net.hostConn = conn;
+    conn.on('open', () => {
+      conn.send({ type:'join', nickname });
+      UI.screen = 'lobby';
+      render();
     });
-
-    /*
-        Все сходили.
-    */
-
-    if (
-        game.trick.length ===
-        game.players.length
-    ) {
-
-        resolveTrick();
-
-        return;
-    }
-
-    game.currentPlayer =
-        (
-            game.currentPlayer + 1
-        ) %
-        game.players.length;
-
-    sendFullState();
+    conn.on('data', data => {
+      if(data.type === 'state'){
+        UI.publicState = data.publicState;
+        UI.myHand = data.yourHand;
+        UI.screen = 'game';
+        UI.errorMsg = '';
+      } else if(data.type === 'error'){
+        UI.errorMsg = data.message;
+      }
+      render();
+    });
+    conn.on('close', () => { UI.errorMsg = 'Соединение с хостом потеряно.'; render(); });
+  });
+  Net.peer.on('error', err => {
+    UI.errorMsg = 'Не удалось подключиться: ' + (err && err.type ? err.type : err);
+    render();
+  });
+}
+function sendAction(msg){
+  if(Net.isHost){
+    if(msg.type === 'bid') hostProcessBid(Net.myId, msg.value);
+    else if(msg.type === 'playTile') hostProcessPlay(Net.myId, msg.tile);
+  } else if(Net.hostConn && Net.hostConn.open){
+    Net.hostConn.send(msg);
+  }
 }
 
-
-/* =========================================================
-   TRICK RESULT
-========================================================= */
-
-function resolveTrick() {
-
-    if (
-        !game.trick.length
-    ) {
-        return;
-    }
-
-    let winner =
-        game.trick[0];
-
-    for (
-        let i = 1;
-        i < game.trick.length;
-        i++
-    ) {
-
-        const candidate =
-            game.trick[i];
-
-        if (
-            compareTiles(
-                candidate.tile,
-                winner.tile
-            )
-        ) {
-
-            winner =
-                candidate;
-        }
-    }
-
-    game.players[
-        winner.playerIndex
-    ].tricks++;
-
-    game.lastTrickWinner =
-        winner.playerIndex;
-
-    game.currentPlayer =
-        winner.playerIndex;
-
-    game.trickNumber++;
-
-    game.phase =
-        "trickResult";
-
-    /*
-        Здесь у всех обновляется "Взял".
-    */
-
-    sendFullState();
-
-    setTimeout(() => {
-
-        const cardsRemain =
-            game.players.some(
-                player =>
-                    player.hand.length > 0
-            );
-
-        if (!cardsRemain) {
-
-            finishRound();
-
-            return;
-        }
-
-        game.trick = [];
-
-        game.phase =
-            "playing";
-
-        sendFullState();
-
-    }, 1300);
-}
-
-
-/* =========================================================
-   SCORE
-========================================================= */
-
-function calculateRoundScore(
-    player
-) {
-
-    const bid =
-        player.bid;
-
-    const tricks =
-        player.tricks;
-
-    if (
-        bid === 0 &&
-        tricks === 0
-    ) {
-        return 5;
-    }
-
-    if (
-        bid > 0 &&
-        tricks === bid
-    ) {
-        return 10 * bid;
-    }
-
-    if (
-        tricks > bid
-    ) {
-        return tricks;
-    }
-
-    return -10 * bid;
-}
-
-
-/* =========================================================
-   FINISH ROUND
-========================================================= */
-
-function finishRound() {
-
-    game.phase =
-        "roundResult";
-
-    game.players.forEach(
-        player => {
-
-            player.roundScore =
-                calculateRoundScore(
-                    player
-                );
-
-            player.score +=
-                player.roundScore;
-        }
-    );
-
-    sendFullState();
-
-    setTimeout(() => {
-
-        if (
-            game.roundIndex + 1 <
-            game.roundTotal
-        ) {
-
-            game.roundIndex++;
-
-            startRound();
-
-        } else {
-
-            finishCycle();
-        }
-
-    }, 2200);
-}
-
-
-/* =========================================================
-   FINISH CYCLE / TIE
-========================================================= */
-
-function finishCycle() {
-
-    const maxScore =
-        Math.max(
-            ...game.players.map(
-                player =>
-                    player.score
-            )
-        );
-
-    const leaders =
-        game.players.filter(
-            player =>
-                player.score ===
-                maxScore
-        );
-
-    if (
-        leaders.length === 1
-    ) {
-
-        game.phase =
-            "finished";
-
-        game.winner =
-            leaders[0].id;
-
-        sendFullState();
-
-        return;
-    }
-
-    /*
-        Ничья.
-
-        Дополнительный кон на 6 карт.
-    */
-
-    game.roundIndex++;
-
-    game.roundTotal =
-        game.roundIndex + 1;
-
-    game.firstBidder =
-        (
-            game.roundIndex - 1
-        ) %
-        game.players.length;
-
-    game.currentPlayer =
-        game.firstBidder;
-
-    game.phase =
-        "bidding";
-
-    game.trick = [];
-
-    game.trickNumber = 0;
-
-    game.lastTrickWinner =
-        null;
-
-    const deck =
-        shuffle(createDeck());
-
-    game.players.forEach(
-        player => {
-
-            player.hand =
-                deck.splice(0, 6);
-
-            player.bid = null;
-
-            player.tricks = 0;
-
-            player.roundScore = 0;
-        }
-    );
-
-    sendFullState();
-
-    toast(
-        "Ничья! Дополнительный кон на 6 карт"
-    );
-}
-
-
-/* =========================================================
+/* =====================================================================
    RENDER
-========================================================= */
+   ===================================================================== */
+const appEl = document.getElementById('app');
 
-function render() {
-
-    if (!game)
-        return;
-
-    if (
-        game.phase === "lobby"
-    ) {
-
-        renderLobby();
-
-        return;
-    }
-
-    if (
-        game.phase === "finished"
-    ) {
-
-        renderResult();
-
-        return;
-    }
-
-    renderGame();
+function render(){
+  if(UI.screen === 'start') return renderStart();
+  if(UI.screen === 'lobby') return renderLobby();
+  if(UI.screen === 'game') return renderGame();
 }
 
-
-/* =========================================================
-   LOBBY
-========================================================= */
-
-function renderLobby() {
-
-    showScreen(
-        "lobbyScreen"
-    );
-
-    $("roomCode").textContent =
-        roomCode;
-
-    $("lobbyPlayers").innerHTML =
-        game.players.map(
-            (player, index) => `
-
-                <div class="player-row">
-
-                    <div>
-
-                        <div class="player-name">
-                            ${escapeHTML(player.nick)}
-                        </div>
-
-                        ${
-                            index === 0
-                                ? `<div class="host-label">
-                                    ХОСТ
-                                   </div>`
-                                : ""
-                        }
-
-                    </div>
-
-                    <div>
-                        ${
-                            player.connected
-                                ? "🟢"
-                                : "⚪"
-                        }
-                    </div>
-
-                </div>
-
-            `
-        ).join("");
-
-    if (
-        game.players.length < 2
-    ) {
-
-        $("lobbyStatus").textContent =
-            "Ожидание второго игрока...";
-
-    } else if (
-        game.players.length < 4
-    ) {
-
-        $("lobbyStatus").textContent =
-            `Игроков: ${game.players.length}. Игра начнётся автоматически.`;
-
-    } else {
-
-        $("lobbyStatus").textContent =
-            "4 игрока. Игра начнётся автоматически.";
-    }
+function renderStart(){
+  appEl.innerHTML = `
+    <div class="brand"><div class="display">TRICKO</div><div class="sub">домино на взятки</div></div>
+    <div class="panel">
+      <label for="nick">Ваш никнейм</label>
+      <input type="text" id="nick" placeholder="Например, Кирилл" maxlength="18">
+      <div class="row" style="margin-top:16px;">
+        <button class="btn-gold" id="btnCreate">Создать комнату</button>
+        <button class="btn-ghost" id="btnShowJoin">Войти по коду</button>
+      </div>
+      <div id="joinBlock" style="display:none; margin-top:16px;">
+        <label for="code">Код комнаты</label>
+        <input type="text" id="code" placeholder="TRK-XXXXX" maxlength="12">
+        <button class="btn-gold" id="btnJoin" style="margin-top:12px; width:100%;">Присоединиться</button>
+      </div>
+      ${UI.errorMsg ? `<div class="error-box">${escapeHtml(UI.errorMsg)}</div>` : ''}
+      <p class="hint" style="margin-top:16px;">2–4 игрока. Один создаёт комнату и делится кодом, остальные вводят его, чтобы присоединиться.</p>
+    </div>
+    <div class="footer-note">28 костей домино · козыри — дубли · побеждает точный расчёт взяток</div>
+  `;
+  document.getElementById('btnShowJoin').onclick = () => {
+    document.getElementById('joinBlock').style.display = 'block';
+  };
+  document.getElementById('btnCreate').onclick = () => {
+    const nick = document.getElementById('nick').value.trim() || 'Игрок';
+    createRoom(nick);
+  };
+  document.getElementById('btnJoin').onclick = () => {
+    const nick = document.getElementById('nick').value.trim() || 'Игрок';
+    const code = document.getElementById('code').value.trim();
+    if(!code){ UI.errorMsg = 'Введите код комнаты.'; render(); return; }
+    joinRoom(nick, code);
+  };
 }
 
-
-/* =========================================================
-   GAME
-========================================================= */
-
-function renderGame() {
-
-    showScreen(
-        "gameScreen"
-    );
-
-    const rounds =
-        getRoundSizes(
-            game.players.length
-        );
-
-    const handSize =
-        rounds[
-            game.roundIndex
-        ] || 6;
-
-    $("roundLabel").textContent =
-        `Раунд ${game.roundIndex + 1} / ${game.roundTotal} · ${handSize} карт`;
-
-    renderScoreboard();
-
-    renderTable();
-
-    renderHand();
-
-    renderBidArea();
-
-    renderRoundPanel();
+function renderLobby(){
+  const pub = UI.publicState;
+  const players = pub ? pub.players : (Net.isHost ? Host.players : []);
+  const canStart = Net.isHost && players.length >= 2;
+  appEl.innerHTML = `
+    <div class="brand"><div class="display">TRICKO</div><div class="sub">лобби</div></div>
+    <div class="panel">
+      <div class="code-display">${Net.roomCode}</div>
+      <p class="hint" style="text-align:center;">Поделитесь этим кодом с друзьями — им нужно нажать «Войти по коду» и ввести его.</p>
+      <div class="player-chip-list" id="chipList"></div>
+      ${UI.errorMsg ? `<div class="error-box">${escapeHtml(UI.errorMsg)}</div>` : ''}
+      ${Net.isHost
+        ? `<button class="btn-gold" id="btnStart" style="width:100%; margin-top:12px;" ${canStart?'':'disabled'}>
+             ${canStart ? 'Начать игру' : 'Нужно минимум 2 игрока'}
+           </button>`
+        : `<p class="hint" style="text-align:center; margin-top:10px;">Ожидание хоста, чтобы начать игру…</p>`
+      }
+    </div>
+  `;
+  const chipList = document.getElementById('chipList');
+  const names = Net.isHost ? Host.players.map(p=>p.nickname) : players.map(p=>p.nickname);
+  chipList.innerHTML = names.map((n,i)=>`<div class="player-chip">${escapeHtml(n)} ${i===0?'<span class="tag">хост</span>':''}</div>`).join('');
+  if(Net.isHost){
+    const btn = document.getElementById('btnStart');
+    if(btn) btn.onclick = hostStartGame;
+  }
 }
 
+function renderGame(){
+  const s = UI.publicState;
+  if(!s){ appEl.innerHTML = '<div class="panel">Загрузка…</div>'; return; }
+  const phaseLabel = {
+    BIDDING: 'Торги', PLAYING: 'Розыгрыш', TRICK_RESULT: 'Итог взятки',
+    ROUND_RESULT: 'Итог раунда', FINISHED: 'Игра завершена'
+  }[s.phase] || s.phase;
 
-/* =========================================================
-   SCOREBOARD
-========================================================= */
+  let html = `
+    <div class="topbar">
+      <div class="room">Комната ${s.roomCode} · раунд ${s.roundNumber}/${s.totalRounds}${s.handSize?` · по ${s.handSize} костей`:''}</div>
+      <div class="phase">${phaseLabel}</div>
+    </div>
+    <div class="board">
+      ${s.players.map(p => renderSeat(p, s)).join('')}
+    </div>
+  `;
 
-function renderScoreboard() {
+  if(s.phase === 'PLAYING' || s.phase === 'TRICK_RESULT'){
+    html += renderTrickArea(s);
+  }
 
-    $("scoreboard").innerHTML =
-        game.players.map(
-            player => `
+  if(s.phase === 'BIDDING'){
+    html += renderBiddingArea(s);
+  } else if(s.phase === 'PLAYING'){
+    html += renderHandArea(s, true);
+  } else if(s.phase === 'TRICK_RESULT'){
+    const winnerName = (s.players.find(p=>p.id===s.lastTrickWinnerId)||{}).nickname || '';
+    html += `<div class="center-note">Взятку берёт <b>${escapeHtml(winnerName)}</b></div>`;
+    html += renderHandArea(s, false);
+  } else if(s.phase === 'ROUND_RESULT'){
+    html += renderRoundResult(s);
+  } else if(s.phase === 'FINISHED'){
+    html += renderFinished(s);
+  }
 
-                <div class="
-                    score-player
-                    ${
-                        player.id === myId
-                            ? "me"
-                            : ""
-                    }
-                ">
+  if(UI.errorMsg){
+    html += `<div class="error-box">${escapeHtml(UI.errorMsg)}</div>`;
+  }
 
-                    <div class="score-player-name">
-
-                        ${escapeHTML(player.nick)}
-
-                        ${
-                            player.id === myId
-                                ? " · Вы"
-                                : ""
-                        }
-
-                    </div>
-
-                    <div class="score">
-                        ${player.score}
-                    </div>
-
-                    <div class="small">
-                        Общий счёт
-                    </div>
-
-                </div>
-
-            `
-        ).join("");
+  appEl.innerHTML = html;
+  wireGameHandlers(s);
 }
 
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-function renderTable() {
-
-    let message = "";
-
-    if (
-        game.phase === "bidding"
-    ) {
-
-        const player =
-            game.players[
-                game.currentPlayer
-            ];
-
-        if (player) {
-
-            message =
-                player.id === myId
-                    ? "Ваша очередь делать ставку"
-                    : `${escapeHTML(player.nick)} делает ставку`;
-        }
-
-    } else if (
-        game.phase === "playing"
-    ) {
-
-        const player =
-            game.players[
-                game.currentPlayer
-            ];
-
-        if (player) {
-
-            message =
-                player.id === myId
-                    ? "Ваш ход"
-                    : `Ход: ${escapeHTML(player.nick)}`;
-        }
-
-    } else if (
-        game.phase === "trickResult"
-    ) {
-
-        const winner =
-            game.players[
-                game.lastTrickWinner
-            ];
-
-        if (winner) {
-
-            message =
-                `Взятку взял ${escapeHTML(winner.nick)}`;
-        }
-
-    } else if (
-        game.phase === "roundResult"
-    ) {
-
-        message =
-            "Раунд завершён";
-    }
-
-    $("tableMessage").innerHTML =
-        message;
-
-    $("trick").innerHTML =
-        game.trick.map(
-            item => `
-
-                <div>
-
-                    ${renderDomino(item.tile)}
-
-                    <div style="
-                        color:white;
-                        font-size:11px;
-                        text-align:center;
-                        margin-top:4px;
-                    ">
-                        ${escapeHTML(
-                            game.players[
-                                item.playerIndex
-                            ].nick
-                        )}
-                    </div>
-
-                </div>
-
-            `
-        ).join("");
+function renderSeat(p, s){
+  const isYou = p.id === Net.myId;
+  const isActive = (s.phase==='BIDDING' && p.id===s.biddingTurnPlayerId) ||
+                    (s.phase==='PLAYING' && p.id===s.playTurnPlayerId);
+  const bidStr = p.bid===null ? '—' : p.bid;
+  let lastRound = '';
+  if(p.lastRoundScore !== null && p.lastRoundScore !== undefined && (s.phase==='ROUND_RESULT' || s.phase==='FINISHED')){
+    const sign = p.lastRoundScore > 0 ? '+' : '';
+    lastRound = `<div class="last-round ${p.lastRoundScore>=0?'pos':'neg'}">${sign}${p.lastRoundScore} за раунд</div>`;
+  }
+  return `
+    <div class="seat ${isActive?'active':''} ${isYou?'you':''}">
+      <div class="name">${escapeHtml(p.nickname)}</div>
+      <div class="score">${p.score}</div>
+      <div class="stat-line"><span>СТАВКА: <b>${bidStr}</b></span><span>ВЗЯТО: <b>${p.tricksTaken}</b></span></div>
+      ${lastRound}
+    </div>
+  `;
 }
 
-
-/* =========================================================
-   DOMINO
-========================================================= */
-
-function renderDomino(tile) {
-
-    return `
-
-        <div class="domino">
-
-            <div class="domino-half">
-                ${renderPips(tile.a)}
-            </div>
-
-            <div class="domino-half">
-                ${renderPips(tile.b)}
-            </div>
-
-        </div>
-
-    `;
+function renderTrickArea(s){
+  if(s.trick.length === 0){
+    return `<div class="trick-area"><div class="trick-empty">Взятка ещё не начата</div></div>`;
+  }
+  const slots = s.trick.map(e => {
+    const name = (s.players.find(p=>p.id===e.playerId)||{}).nickname || '';
+    return `<div class="trick-slot"><div class="who">${escapeHtml(name)}</div>${renderTileHTML(e.tile,{big:true})}</div>`;
+  }).join('');
+  return `<div class="trick-area">${slots}</div>`;
 }
 
+function renderBiddingArea(s){
+  const myTurn = s.biddingTurnPlayerId === Net.myId;
+  const handSize = s.handSize;
+  if(!myTurn){
+    const name = (s.players.find(p=>p.id===s.biddingTurnPlayerId)||{}).nickname || '';
+    return `<div class="panel"><div class="center-note">Ставку делает <b>${escapeHtml(name)}</b>…</div>${renderMyHandStrip()}</div>`;
+  }
+  let opts = '';
+  for(let i=0;i<=handSize;i++) opts += `<button class="bid-btn" data-bid="${i}">${i}</button>`;
+  return `<div class="panel"><div class="center-note">Ваша ставка — сколько взяток возьмёте?</div><div class="bid-grid">${opts}</div>${renderMyHandStrip()}</div>`;
+}
 
-function renderPips(number) {
+function renderMyHandStrip(){
+  if(!UI.myHand || UI.myHand.length===0) return '';
+  return `<div class="hand-row" style="margin-top:14px; opacity:0.85;">
+    ${UI.myHand.map(t=>renderTileHTML(t)).join('')}
+  </div>`;
+}
 
-    const positions = {
+function renderHandArea(s, interactive){
+  const myTurn = interactive && s.playTurnPlayerId === Net.myId;
+  const tiles = UI.myHand.map((t,i) => {
+    const disabled = !myTurn;
+    return `<button class="hand-tile-btn" data-idx="${i}" ${disabled?'disabled':''}>${renderTileHTML(t,{big:true})}</button>`;
+  }).join('');
+  const label = interactive
+    ? (myTurn ? 'Ваш ход — выберите кость' : `Ходит ${escapeHtml((s.players.find(p=>p.id===s.playTurnPlayerId)||{}).nickname||'')}…`)
+    : 'Ваши кости';
+  return `<div class="panel"><div class="center-note">${label}</div><div class="hand-row">${tiles}</div></div>`;
+}
 
-        1: ["p5"],
-        2: ["p1","p9"],
-        3: ["p1","p5","p9"],
-        4: ["p1","p3","p7","p9"],
-        5: ["p1","p3","p5","p7","p9"],
-        6: ["p1","p3","p4","p6","p7","p9"]
+function renderRoundResult(s){
+  const rows = s.players.map(p => {
+    const sign = p.lastRoundScore>0?'+':'';
+    return `<tr><td>${escapeHtml(p.nickname)}</td><td>${p.bid}</td><td>${p.tricksTaken}</td><td>${sign}${p.lastRoundScore}</td><td><b>${p.score}</b></td></tr>`;
+  }).join('');
+  return `<div class="panel">
+    <h3>Итоги раунда ${s.roundNumber}</h3>
+    <table class="result-table">
+      <tr><th>Игрок</th><th>Ставка</th><th>Взято</th><th>Очки за раунд</th><th>Всего</th></tr>
+      ${rows}
+    </table>
+    <p class="hint" style="margin-top:10px;">Следующий раунд начнётся автоматически…</p>
+  </div>`;
+}
 
+function renderFinished(s){
+  const winner = s.players.find(p=>p.id===s.winnerId);
+  const sorted = s.players.slice().sort((a,b)=>b.score-a.score);
+  const rows = sorted.map(p => `<tr><td>${escapeHtml(p.nickname)}</td><td><b>${p.score}</b></td></tr>`).join('');
+  return `<div class="panel">
+    <div class="final-winner">
+      <div class="hint">Победитель</div>
+      <div class="display">${escapeHtml(winner ? winner.nickname : '')}</div>
+    </div>
+    <table class="result-table">
+      <tr><th>Игрок</th><th>Итоговый счёт</th></tr>
+      ${rows}
+    </table>
+    ${Net.isHost ? `<button class="btn-gold" id="btnRematch" style="width:100%; margin-top:14px;">Сыграть ещё раз</button>` : `<p class="hint" style="text-align:center; margin-top:14px;">Ожидание хоста для новой игры…</p>`}
+  </div>`;
+}
+
+function wireGameHandlers(s){
+  document.querySelectorAll('.bid-btn').forEach(btn=>{
+    btn.onclick = () => sendAction({ type:'bid', value: Number(btn.dataset.bid) });
+  });
+  document.querySelectorAll('.hand-tile-btn').forEach(btn=>{
+    btn.onclick = () => {
+      if(btn.disabled) return;
+      const idx = Number(btn.dataset.idx);
+      const tile = UI.myHand[idx];
+      sendAction({ type:'playTile', tile });
     };
-
-    if (number === 0) {
-
-        return `
-            <div class="domino-pips"></div>
-        `;
-    }
-
-    return `
-
-        <div class="domino-pips">
-
-            ${
-                positions[number]
-                    .map(
-                        position =>
-                            `<span class="pip ${position}"></span>`
-                    )
-                    .join("")
-            }
-
-        </div>
-
-    `;
+  });
+  const rematchBtn = document.getElementById('btnRematch');
+  if(rematchBtn) rematchBtn.onclick = () => { hostRestart(); };
 }
 
-
-/* =========================================================
-   HAND
-========================================================= */
-
-function getMyHand() {
-
-    if (isHost) {
-
-        const me =
-            game.players.find(
-                player =>
-                    player.id === myId
-            );
-
-        return me?.hand || [];
-    }
-
-    return game.myHand || [];
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-
-function renderHand() {
-
-    const hand =
-        getMyHand();
-
-    const canPlay =
-        game.phase === "playing" &&
-        game.players[
-            game.currentPlayer
-        ]?.id === myId;
-
-    $("hand").innerHTML =
-        hand.map(
-            tile => `
-
-                <div
-                    class="
-                        domino
-                        ${
-                            canPlay
-                                ? ""
-                                : "disabled"
-                        }
-                    "
-                    ${
-                        canPlay
-                            ? `onclick="playTile(${tile.id})"`
-                            : ""
-                    }
-                >
-
-                    <div class="domino-half">
-                        ${renderPips(tile.a)}
-                    </div>
-
-                    <div class="domino-half">
-                        ${renderPips(tile.b)}
-                    </div>
-
-                </div>
-
-            `
-        ).join("");
-}
-
-
-/* =========================================================
-   BID AREA
-========================================================= */
-
-function renderBidArea() {
-
-    const area =
-        $("bidArea");
-
-    if (
-        game.phase !== "bidding"
-    ) {
-
-        area.innerHTML = "";
-
-        return;
-    }
-
-    const player =
-        game.players[
-            game.currentPlayer
-        ];
-
-    if (!player) {
-
-        area.innerHTML = "";
-
-        return;
-    }
-
-    if (
-        player.id !== myId
-    ) {
-
-        area.innerHTML = `
-
-            <div class="bid-title">
-                Ставки
-            </div>
-
-            <div class="waiting">
-
-                Сейчас заявляет
-                <strong>
-                    ${escapeHTML(player.nick)}
-                </strong>
-
-            </div>
-
-        `;
-
-        return;
-    }
-
-    const max =
-        player.hand.length;
-
-    let html = `
-
-        <div class="bid-title">
-            Ваша ставка
-        </div>
-
-        <div class="bid-buttons">
-    `;
-
-    for (
-        let i = 0;
-        i <= max;
-        i++
-    ) {
-
-        html += `
-
-            <button
-                class="bid-button"
-                onclick="makeBid(${i})"
-            >
-                ${i}
-            </button>
-
-        `;
-    }
-
-    html += `
-        </div>
-    `;
-
-    area.innerHTML =
-        html;
-}
-
-
-/* =========================================================
-   ROUND INFO
-========================================================= */
-
-function renderRoundPanel() {
-
-    const panel =
-        $("roundInfoPanel");
-
-    if (
-        ![
-            "bidding",
-            "playing",
-            "trickResult",
-            "roundResult"
-        ].includes(game.phase)
-    ) {
-
-        panel.innerHTML = "";
-
-        return;
-    }
-
-    const title =
-        game.phase === "bidding"
-            ? "Ставки"
-            : "Ставки и взятки";
-
-    let html = `
-
-        <div class="player-stats">
-
-            <div class="player-stats-title">
-                ${title}
-            </div>
-    `;
-
-    game.players.forEach(
-        (player, index) => {
-
-            const current =
-                game.phase === "bidding" &&
-                game.currentPlayer === index;
-
-            let status = "";
-
-            if (
-                game.phase === "bidding"
-            ) {
-
-                if (
-                    player.bid === null
-                ) {
-
-                    status =
-                        current
-                            ? "Сейчас заявляет"
-                            : "Ожидает";
-
-                } else {
-
-                    status =
-                        "Ставка сделана";
-                }
-
-            } else {
-
-                status =
-                    "В игре";
-            }
-
-            html += `
-
-                <div class="
-                    player-stat
-                    ${current ? "current" : ""}
-                ">
-
-                    <div class="player-stat-left">
-
-                        <div class="player-stat-name">
-                            ${escapeHTML(player.nick)}
-                        </div>
-
-                        <div class="player-stat-status">
-                            ${status}
-                        </div>
-
-                    </div>
-
-                    <div class="player-stat-right">
-
-                        <div class="
-                            stat-badge
-                            bid
-                            ${
-                                player.bid === null
-                                    ? "pending"
-                                    : ""
-                            }
-                        ">
-
-                            ${
-                                player.bid === null
-                                    ? "Ставка —"
-                                    : "Ставка " + player.bid
-                            }
-
-                        </div>
-
-                        ${
-                            game.phase !== "bidding"
-                                ? `
-                                    <div class="
-                                        stat-badge
-                                        tricks
-                                    ">
-                                        Взял ${player.tricks}
-                                    </div>
-                                  `
-                                : ""
-                        }
-
-                    </div>
-
-                </div>
-
-            `;
-        }
-    );
-
-    html += `
-        </div>
-    `;
-
-    panel.innerHTML =
-        html;
-}
-
-
-/* =========================================================
-   BID
-========================================================= */
-
-function makeBid(value) {
-
-    if (
-        !game ||
-        game.phase !== "bidding"
-    ) {
-        return;
-    }
-
-    const current =
-        game.players[
-            game.currentPlayer
-        ];
-
-    if (
-        !current ||
-        current.id !== myId
-    ) {
-        return;
-    }
-
-    if (isHost) {
-
-        hostReceiveBid(
-            myId,
-            value
-        );
-
-    } else {
-
-        sendToHost({
-
-            type: "bid",
-
-            value
-        });
-    }
-}
-
-
-/* =========================================================
-   PLAY TILE
-========================================================= */
-
-function playTile(tileId) {
-
-    if (
-        !game ||
-        game.phase !== "playing"
-    ) {
-        return;
-    }
-
-    const current =
-        game.players[
-            game.currentPlayer
-        ];
-
-    if (
-        !current ||
-        current.id !== myId
-    ) {
-        return;
-    }
-
-    if (isHost) {
-
-        hostReceivePlay(
-            myId,
-            tileId
-        );
-
-    } else {
-
-        sendToHost({
-
-            type: "play",
-
-            tileId
-        });
-    }
-}
-
-
-/* =========================================================
-   HOST PEER
-========================================================= */
-
-function createHostPeer() {
-
-    const peerId =
-        "domino-" +
-        roomCode;
-
-    peer =
-        new Peer(
-            peerId,
-            {
-                debug: 1
-            }
-        );
-
-    peer.on(
-        "open",
-        id => {
-
-            myId = id;
-
-            game =
-                createGameState();
-
-            game.players.push({
-
-                id: myId,
-
-                nick:
-                    localStorage.getItem(
-                        "tricko_nickname"
-                    ) || "Игрок",
-
-                score: 0,
-
-                roundScore: 0,
-
-                bid: null,
-
-                tricks: 0,
-
-                connected: true,
-
-                hand: []
-            });
-
-            showScreen(
-                "lobbyScreen"
-            );
-
-            render();
-
-            toast(
-                "Комната создана"
-            );
-        }
-    );
-
-
-    peer.on(
-        "connection",
-        conn => {
-
-            connections[
-                conn.peer
-            ] = conn;
-
-            conn.on(
-                "open",
-                () => {
-
-                    /*
-                        Пока игрок ещё не отправил join.
-                    */
-
-                }
-            );
-
-            conn.on(
-                "data",
-                data => {
-
-                    handleHostMessage(
-                        conn,
-                        data
-                    );
-                }
-            );
-
-            conn.on(
-                "close",
-                () => {
-
-                    if (!game)
-                        return;
-
-                    const player =
-                        game.players.find(
-                            p =>
-                                p.id ===
-                                conn.peer
-                        );
-
-                    if (player) {
-
-                        player.connected =
-                            false;
-
-                        sendFullState();
-                    }
-                }
-            );
-
-            conn.on(
-                "error",
-                error => {
-
-                    console.error(
-                        "Connection error:",
-                        error
-                    );
-                }
-            );
-        }
-    );
-
-
-    peer.on(
-        "error",
-        error => {
-
-            console.error(
-                "Peer error:",
-                error
-            );
-
-            if (
-                error.type ===
-                "unavailable-id"
-            ) {
-
-                toast(
-                    "Не удалось создать комнату. Попробуйте ещё раз."
-                );
-
-            } else if (
-                error.type ===
-                "network"
-            ) {
-
-                toast(
-                    "Нет соединения с сервером PeerJS"
-                );
-
-            } else {
-
-                toast(
-                    "Ошибка соединения: " +
-                    error.type
-                );
-            }
-        }
-    );
-}
-
-
-/* =========================================================
-   HOST MESSAGE
-========================================================= */
-
-function handleHostMessage(
-    conn,
-    data
-) {
-
-    if (
-        !data ||
-        !game
-    ) {
-        return;
-    }
-
-    if (
-        data.type === "join"
-    ) {
-
-        if (
-            game.players.length >= 4
-        ) {
-
-            conn.send({
-
-                type: "error",
-
-                message:
-                    "В комнате уже 4 игрока"
-
-            });
-
-            return;
-        }
-
-        if (
-            game.phase !== "lobby"
-        ) {
-
-            conn.send({
-
-                type: "error",
-
-                message:
-                    "Игра уже началась"
-
-            });
-
-            return;
-        }
-
-        const existing =
-            game.players.find(
-                player =>
-                    player.id ===
-                    conn.peer
-            );
-
-        if (existing) {
-
-            existing.connected =
-                true;
-
-            sendFullState();
-
-            return;
-        }
-
-        const nick =
-            String(
-                data.nick ||
-                "Игрок"
-            )
-            .trim()
-            .slice(0, 20);
-
-        game.players.push({
-
-            id: conn.peer,
-
-            nick:
-                nick || "Игрок",
-
-            score: 0,
-
-            roundScore: 0,
-
-            bid: null,
-
-            tricks: 0,
-
-            connected: true,
-
-            hand: []
-        });
-
-        sendFullState();
-
-        /*
-            Запускаем таймер только один раз.
-        */
-
-        if (
-            game.players.length >= 2 &&
-            !lobbyStartTimer
-        ) {
-
-            lobbyStartTimer =
-                setTimeout(
-                    () => {
-
-                        lobbyStartTimer =
-                            null;
-
-                        if (
-                            game &&
-                            game.phase ===
-                            "lobby" &&
-                            game.players.length >= 2
-                        ) {
-
-                            game.roundIndex =
-                                0;
-
-                            startRound();
-                        }
-
-                    },
-                    3000
-                );
-        }
-
-        return;
-    }
-
-
-    if (
-        data.type === "bid"
-    ) {
-
-        hostReceiveBid(
-            conn.peer,
-            data.value
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type === "play"
-    ) {
-
-        hostReceivePlay(
-            conn.peer,
-            data.tileId
-        );
-
-        return;
-    }
-}
-
-
-/* =========================================================
-   JOIN
-========================================================= */
-
-function joinRoom() {
-
-    const nick =
-        $("nickname")
-            .value
-            .trim();
-
-    const code =
-        $("roomInput")
-            .value
-            .trim()
-            .toUpperCase();
-
-    if (!nick) {
-
-        toast(
-            "Введите имя"
-        );
-
-        return;
-    }
-
-    if (!code) {
-
-        toast(
-            "Введите код игры"
-        );
-
-        return;
-    }
-
-    localStorage.setItem(
-        "tricko_nickname",
-        nick
-    );
-
-    roomCode =
-        code;
-
-    isHost = false;
-
-    peer =
-        new Peer({
-            debug: 1
-        });
-
-    peer.on(
-        "open",
-        id => {
-
-            myId = id;
-
-            const hostId =
-                "domino-" +
-                roomCode;
-
-            const conn =
-                peer.connect(
-                    hostId,
-                    {
-                        reliable: true,
-                        serialization: "json"
-                    }
-                );
-
-            connections.host =
-                conn;
-
-            conn.on(
-                "open",
-                () => {
-
-                    conn.send({
-
-                        type: "join",
-
-                        nick
-                    });
-
-                    toast(
-                        "Подключено"
-                    );
-                }
-            );
-
-            conn.on(
-                "data",
-                data => {
-
-                    if (
-                        data.type ===
-                        "state"
-                    ) {
-
-                        receiveState(
-                            data
-                        );
-                    }
-
-                    if (
-                        data.type ===
-                        "error"
-                    ) {
-
-                        toast(
-                            data.message
-                        );
-                    }
-                }
-            );
-
-            conn.on(
-                "close",
-                () => {
-
-                    toast(
-                        "Соединение с хостом потеряно"
-                    );
-                }
-            );
-
-            conn.on(
-                "error",
-                error => {
-
-                    console.error(
-                        "Connection error:",
-                        error
-                    );
-
-                    toast(
-                        "Ошибка соединения"
-                    );
-                }
-            );
-        }
-    );
-
-
-    peer.on(
-        "error",
-        error => {
-
-            console.error(
-                "Peer error:",
-                error
-            );
-
-            if (
-                error.type ===
-                "peer-unavailable"
-            ) {
-
-                toast(
-                    "Игра с таким кодом не найдена"
-                );
-
-            } else {
-
-                toast(
-                    "Не удалось подключиться: " +
-                    error.type
-                );
-            }
-        }
-    );
-}
-
-
-/* =========================================================
-   SEND TO HOST
-========================================================= */
-
-function sendToHost(data) {
-
-    const conn =
-        connections.host;
-
-    if (
-        conn &&
-        conn.open
-    ) {
-
-        conn.send(data);
-
-    } else {
-
-        toast(
-            "Нет соединения с комнатой"
-        );
-    }
-}
-
-
-/* =========================================================
-   CREATE ROOM
-========================================================= */
-
-function createRoom() {
-
-    const nick =
-        $("nickname")
-            .value
-            .trim();
-
-    if (!nick) {
-
-        toast(
-            "Введите имя"
-        );
-
-        return;
-    }
-
-    localStorage.setItem(
-        "tricko_nickname",
-        nick
-    );
-
-    /*
-        Полностью закрываем старый Peer,
-        если пользователь создаёт комнату
-        повторно после ошибки.
-    */
-
-    if (peer) {
-
-        try {
-            peer.destroy();
-        } catch {}
-
-        peer = null;
-    }
-
-    roomCode =
-        randomRoomCode();
-
-    isHost = true;
-
-    createHostPeer();
-}
-
-
-/* =========================================================
-   COPY
-========================================================= */
-
-async function copyRoomCode() {
-
-    try {
-
-        await navigator.clipboard.writeText(
-            roomCode
-        );
-
-        toast(
-            "Код скопирован"
-        );
-
-    } catch {
-
-        toast(
-            "Код: " + roomCode
-        );
-    }
-}
-
-
-/* =========================================================
-   LEAVE
-========================================================= */
-
-function leaveGame() {
-
-    if (lobbyStartTimer) {
-
-        clearTimeout(
-            lobbyStartTimer
-        );
-
-        lobbyStartTimer =
-            null;
-    }
-
-    Object.values(
-        connections
-    ).forEach(
-        conn => {
-
-            try {
-                conn.close();
-            } catch {}
-
-        }
-    );
-
-    connections = {};
-
-    if (peer) {
-
-        try {
-            peer.destroy();
-        } catch {}
-    }
-
-    peer = null;
-
-    game = null;
-
-    roomCode = "";
-
-    myId = "";
-
-    isHost = false;
-
-    showScreen(
-        "homeScreen"
-    );
-}
-
-
-/* =========================================================
-   RESULT
-========================================================= */
-
-function renderResult() {
-
-    showScreen(
-        "resultScreen"
-    );
-
-    const winner =
-        game.players.find(
-            player =>
-                player.id ===
-                game.winner
-        );
-
-    $("winner").textContent =
-        winner
-            ? `${winner.nick} победил!`
-            : "Победитель определён";
-
-    const sorted =
-        [...game.players].sort(
-            (a, b) =>
-                b.score - a.score
-        );
-
-    $("finalScores").innerHTML =
-        sorted.map(
-            (player, index) => `
-
-                <div class="final-player">
-
-                    <div class="final-player-name">
-
-                        ${
-                            index === 0
-                                ? "🏆 "
-                                : ""
-                        }
-
-                        ${escapeHTML(
-                            player.nick
-                        )}
-
-                    </div>
-
-                    <strong>
-                        ${player.score}
-                    </strong>
-
-                </div>
-
-            `
-        ).join("");
-}
-
-
-/* =========================================================
-   EVENTS
-========================================================= */
-
-$("createBtn")
-    .addEventListener(
-        "click",
-        createRoom
-    );
-
-
-$("joinBtn")
-    .addEventListener(
-        "click",
-        joinRoom
-    );
-
-
-$("copyRoomBtn")
-    .addEventListener(
-        "click",
-        copyRoomCode
-    );
-
-
-$("leaveLobbyBtn")
-    .addEventListener(
-        "click",
-        leaveGame
-    );
-
-
-$("leaveGameBtn")
-    .addEventListener(
-        "click",
-        leaveGame
-    );
-
-
-$("newGameBtn")
-    .addEventListener(
-        "click",
-        leaveGame
-    );
-
-
-$("roomInput")
-    .addEventListener(
-        "input",
-        event => {
-
-            event.target.value =
-                event.target.value
-                    .toUpperCase()
-                    .replace(
-                        /[^A-Z0-9]/g,
-                        ""
-                    )
-                    .slice(0, 5);
-        }
-    );
-
-
-$("nickname")
-    .addEventListener(
-        "input",
-        event => {
-
-            localStorage.setItem(
-                "tricko_nickname",
-                event.target.value
-            );
-        }
-    );
-
+render();
 </script>
-
 </body>
 </html>
