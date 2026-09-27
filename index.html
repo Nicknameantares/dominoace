@@ -124,6 +124,17 @@ input:focus {
     margin: 10px 0;
 }
 
+.share-link {
+    background: #f5f3ed;
+    border-radius: 12px;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-all;
+    text-align: center;
+}
+
 /* ---------- LOBBY ---------- */
 
 .players {
@@ -573,25 +584,20 @@ input:focus {
             </button>
 
             <button class="btn secondary" id="joinBtn">
-                Войти по коду
+                Войти по ссылке
             </button>
 
         </div>
 
         <div class="card" id="joinCard" style="display:none">
 
-            <label>Код комнаты</label>
-
-            <input
-                id="roomInput"
-                maxlength="6"
-                placeholder="Например, A7K2P"
-                autocomplete="off"
-                style="text-transform:uppercase"
-            >
+            <div class="waiting" id="joinLinkHint">
+                Вы приглашены в игру.<br>
+                Введите свой ник и нажмите «Войти в игру».
+            </div>
 
             <button class="btn" id="connectBtn">
-                Подключиться
+                Войти в игру
             </button>
 
         </div>
@@ -605,12 +611,16 @@ input:focus {
 
         <div class="card">
 
-            <div class="small">Код комнаты</div>
+            <div class="small">Ссылка для друзей</div>
 
-            <div class="room-code" id="roomCode"></div>
+            <div class="share-link" id="shareLink"></div>
 
             <button class="btn secondary" id="copyRoomBtn">
-                📋 Скопировать код
+                📋 Скопировать ссылку
+            </button>
+
+            <button class="btn secondary" id="shareRoomBtn" style="display:none">
+                📤 Поделиться
             </button>
 
         </div>
@@ -740,7 +750,8 @@ const gameScreen = $("gameScreen");
 const resultScreen = $("resultScreen");
 
 const nicknameInput = $("nickname");
-const roomInput = $("roomInput");
+const joinCard = $("joinCard");
+const joinLinkHint = $("joinLinkHint");
 
 
 // ------------------------------------------------------------
@@ -823,6 +834,38 @@ function randomRoomCode() {
     }
 
     return result;
+}
+
+function getRoomFromUrl() {
+
+    try {
+
+        const room = (new URLSearchParams(window.location.search).get("room") || "")
+            .trim()
+            .toUpperCase();
+
+        return /^[A-Z0-9]{4,6}$/.test(room)
+            ? room
+            : null;
+
+    } catch (e) {
+
+        return null;
+
+    }
+}
+
+
+function getShareUrl() {
+
+    const url = new URL(window.location.href);
+
+    url.search = "";
+    url.hash = "";
+
+    url.searchParams.set("room", roomCode);
+
+    return url.toString();
 }
 
 
@@ -1055,13 +1098,11 @@ function joinRoom() {
 
     if (!nick) return;
 
-    const code = roomInput.value
-        .trim()
-        .toUpperCase();
+    const code = getRoomFromUrl();
 
-    if (!/^[A-Z0-9]{4,6}$/.test(code)) {
+    if (!code) {
 
-        toast("Неверный код комнаты");
+        toast("Откройте ссылку-приглашение");
 
         return;
     }
@@ -1095,17 +1136,20 @@ function joinRoom() {
 
         });
 
+        conn.on("error", () => {
+            toast("Не удалось подключиться к игре");
+        });
+
     });
 
     peer.on("error", err => {
 
         console.error(err);
 
-        toast("Не удалось подключиться к комнате");
+        toast("Не удалось подключиться к игре");
 
     });
 }
-
 
 function setupConnection(conn) {
 
@@ -1921,7 +1965,7 @@ function finishCycle() {
     });
 
     game.firstBidder =
-        (game.roundIndex - 1)
+        (game.firstBidder + 1)
         % game.players.length;
 
     game.currentPlayer =
@@ -1947,8 +1991,17 @@ function showLobby() {
 
     showScreen(lobbyScreen);
 
-    $("roomCode").textContent =
-        roomCode;
+    const link = getShareUrl();
+
+    $("shareLink").textContent = link;
+
+    const shareBtn = $("shareRoomBtn");
+
+    if (navigator.share) {
+        shareBtn.style.display = "block";
+    } else {
+        shareBtn.style.display = "none";
+    }
 
     renderLobby();
 }
@@ -2518,19 +2571,37 @@ $("copyRoomBtn").addEventListener(
     "click",
     async () => {
 
+        const link = getShareUrl();
+
         try {
 
-            await navigator.clipboard.writeText(
-                roomCode
-            );
+            await navigator.clipboard.writeText(link);
 
-            toast("Код скопирован");
+            toast("Ссылка скопирована");
 
         } catch {
 
-            toast(`Код комнаты: ${roomCode}`);
+            toast("Ссылка: " + link);
 
         }
+
+    }
+);
+
+
+$("shareRoomBtn").addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            await navigator.share({
+                title: "Домино — присоединиться к игре",
+                text: "Присоединяйся к моей игре в домино",
+                url: getShareUrl()
+            });
+
+        } catch (e) {}
 
     }
 );
@@ -2554,12 +2625,15 @@ $("joinBtn").addEventListener(
     "click",
     () => {
 
-        const card = $("joinCard");
+        if (!getRoomFromUrl()) {
 
-        card.style.display =
-            card.style.display === "none"
-                ? "block"
-                : "none";
+            toast("Для входа откройте ссылку-приглашение");
+
+            return;
+
+        }
+
+        joinCard.style.display = "block";
 
     }
 );
@@ -2576,16 +2650,45 @@ $("connectBtn").addEventListener(
 
 
 // ------------------------------------------------------------
-// ENTER IN ROOM INPUT
+// ENTER IN NICKNAME
 // ------------------------------------------------------------
 
-roomInput.addEventListener(
+nicknameInput.addEventListener(
     "keydown",
     event => {
 
         if (event.key === "Enter") {
 
-            joinRoom();
+            if (getRoomFromUrl()) {
+                joinRoom();
+            } else {
+                createHost();
+            }
+
+        }
+
+    }
+);
+
+
+// ------------------------------------------------------------
+// AUTO OPEN INVITATION
+// ------------------------------------------------------------
+
+window.addEventListener(
+    "load",
+    () => {
+
+        const invitedRoom = getRoomFromUrl();
+
+        if (invitedRoom) {
+
+            roomCode = invitedRoom;
+
+            joinCard.style.display = "block";
+
+            joinLinkHint.innerHTML =
+                `Вы приглашены в игру.<br><strong>Введите свой ник и нажмите «Войти в игру».</strong>`;
 
         }
 
