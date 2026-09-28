@@ -181,79 +181,6 @@ input:focus {
     text-align: right;
 }
 
-.game-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 330px;
-    gap: 14px;
-    align-items: start;
-}
-
-.game-main {
-    min-width: 0;
-}
-
-.round-history-card {
-    background: white;
-    border-radius: 18px;
-    padding: 14px;
-    box-shadow: 0 2px 14px rgba(0,0,0,.06);
-    position: sticky;
-    top: 12px;
-    max-height: calc(100vh - 24px);
-    overflow: auto;
-}
-
-.round-history-title {
-    font-size: 18px;
-    font-weight: 800;
-}
-
-.round-history-subtitle {
-    color: #666;
-    font-size: 12px;
-    line-height: 1.4;
-    margin: 5px 0 10px;
-}
-
-.round-history-table-wrap {
-    overflow-x: auto;
-}
-
-.round-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 12px;
-}
-
-.round-history-table th,
-.round-history-table td {
-    padding: 7px 6px;
-    border-bottom: 1px solid #eee;
-    text-align: center;
-    white-space: nowrap;
-}
-
-.round-history-table th {
-    font-size: 11px;
-    color: #777;
-    font-weight: 700;
-    position: sticky;
-    top: 0;
-    background: white;
-}
-
-.round-history-table td:first-child,
-.round-history-table th:first-child {
-    text-align: left;
-}
-
-.round-history-note {
-    color: #777;
-    font-size: 11px;
-    line-height: 1.4;
-    margin-top: 10px;
-}
-
 .scoreboard {
     display: flex;
     gap: 7px;
@@ -624,25 +551,6 @@ input:focus {
         grid-template-columns: repeat(4, 1fr);
     }
 }
-
-@media (max-width: 820px) {
-
-    .app {
-        max-width: 100%;
-    }
-
-    .game-layout {
-        grid-template-columns: 1fr;
-    }
-
-    .round-history-card {
-        position: static;
-        max-height: none;
-        order: 2;
-    }
-
-}
-
 </style>
 </head>
 
@@ -739,10 +647,6 @@ input:focus {
     <!-- GAME -->
 
     <section id="gameScreen" class="screen">
-        <div class="game-layout">
-
-            <div class="game-main">
-
 
         <div class="game-header">
 
@@ -779,38 +683,8 @@ input:focus {
 
         <div class="info" id="roundInfoPanel"></div>
 
-            </div>
-
-            <aside class="round-history-card">
-
-                <div class="round-history-title">
-                    Коны
-                </div>
-
-                <div class="round-history-subtitle" id="roundHistoryRemaining">
-                    Осталось: —
-                </div>
-
-                <div class="round-history-table-wrap">
-                    <table class="round-history-table">
-                        <thead>
-                            <tr>
-                                <th>Кон</th>
-                                <th>Кости</th>
-                                <th id="roundHistoryPlayersHead">Счёт</th>
-                            </tr>
-                        </thead>
-                        <tbody id="roundHistoryBody"></tbody>
-                    </table>
-                </div>
-
-                <div class="round-history-note" id="roundHistoryNote"></div>
-
-            </aside>
-
-        </div>
-
     </section>
+
 
     <!-- RESULT -->
 
@@ -1387,8 +1261,7 @@ function publicGameState() {
         trick: game.trick,
         trickNumber: game.trickNumber,
         lastTrickWinner: game.lastTrickWinner,
-        winner: game.winner,
-        roundHistory: game.roundHistory || []
+        winner: game.winner
     };
 }
 
@@ -1626,9 +1499,6 @@ function createGame(hostNick) {
         lastTrickWinner: null,
 
         winner: null,
-
-        // История завершённых конов.
-        roundHistory: [],
 
         startTimer: null
 
@@ -2004,17 +1874,6 @@ function finishRound() {
 
     });
 
-    // Сохраняем результат кона до начала следующего.
-    game.roundHistory.push({
-        round: game.roundIndex + 1,
-        handSize: game.players[0]?.hand?.length || 0,
-        scores: game.players.map(player => ({
-            nick: player.nick,
-            roundScore: player.roundScore,
-            totalScore: player.score
-        }))
-    });
-
     sendFullState();
 
     /*
@@ -2241,152 +2100,6 @@ function renderGame() {
     renderBidArea();
 
     renderRoundPanel();
-
-    renderRoundHistory();
-}
-
-
-// ------------------------------------------------------------
-// ROUND HISTORY / REFERENCE
-// ------------------------------------------------------------
-
-function renderRoundHistory() {
-
-    const body = $("roundHistoryBody");
-    const remaining = $("roundHistoryRemaining");
-    const head = $("roundHistoryPlayersHead");
-    const note = $("roundHistoryNote");
-
-    if (!body || !game) return;
-
-    const history = game.roundHistory || [];
-    const players = game.players || [];
-
-    // Заголовок показывает имена игроков.
-    head.textContent =
-        players.map(p => p.nick).join(" / ");
-
-    body.innerHTML = "";
-
-    history.forEach(item => {
-
-        const row = document.createElement("tr");
-
-        const scoresText =
-            item.scores
-                .map(s => {
-                    const sign = s.roundScore > 0 ? "+" : "";
-                    return `${sign}${s.roundScore} (${s.totalScore})`;
-                })
-                .join(" / ");
-
-        row.innerHTML = `
-            <td>${item.round}</td>
-            <td>${item.handSize}</td>
-            <td>${escapeHTML(scoresText)}</td>
-        `;
-
-        body.appendChild(row);
-
-    });
-
-    // Текущий кон ещё не записан в историю, поэтому отдельно отмечаем его.
-    const currentSize =
-        getCurrentReferenceRoundSize();
-
-    const remainingItems =
-        getRemainingReferenceRounds();
-
-    if (game.phase === "finished") {
-
-        remaining.textContent = "Цикл завершён";
-
-    } else if (remainingItems.tie) {
-
-        remaining.textContent =
-            "Осталось: дополнительные коны по 6 костей — до определения победителя";
-
-    } else {
-
-        const count = remainingItems.sizes.length;
-
-        if (count === 0) {
-
-            remaining.textContent = "Осталось: последний кон";
-
-        } else {
-
-            remaining.textContent =
-                `Осталось после текущего: ${count} — ${formatRoundSizes(remainingItems.sizes)}`;
-
-        }
-
-    }
-
-    note.textContent =
-        currentSize
-            ? `Сейчас: кон ${game.roundIndex + 1} — ${currentSize} костей. В таблице выше только завершённые коны.`
-            : "В таблице выше только завершённые коны.";
-
-}
-
-
-function getCurrentReferenceRoundSize() {
-
-    if (!game || game.roundIndex < 0) return null;
-
-    const sizes =
-        getRoundSizes(game.players.length);
-
-    if (game.roundIndex < sizes.length) {
-        return sizes[game.roundIndex];
-    }
-
-    // Если индекс вышел за стандартную последовательность,
-    // значит идёт дополнительный кон из-за ничьей.
-    return 6;
-}
-
-
-function getRemainingReferenceRounds() {
-
-    if (!game) {
-        return { sizes: [], tie: false };
-    }
-
-    const sizes =
-        getRoundSizes(game.players.length);
-
-    if (game.roundIndex < sizes.length - 1) {
-
-        return {
-            sizes: sizes.slice(game.roundIndex + 1),
-            tie: false
-        };
-
-    }
-
-    if (game.roundIndex >= sizes.length) {
-
-        return {
-            sizes: [6],
-            tie: true
-        };
-
-    }
-
-    return {
-        sizes: [],
-        tie: false
-    };
-}
-
-
-function formatRoundSizes(sizes) {
-
-    if (!sizes.length) return "—";
-
-    return sizes.join(" → ");
 }
 
 
