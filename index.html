@@ -649,15 +649,6 @@ input:focus {
 
 }
 
-<style>
-.round-history-table tr.current-round td {
-    font-weight: 800;
-    background: #f5f3ed;
-}
-
-.round-history-table tr.tie-break-row td {
-    font-style: italic;
-}
 </style>
 </head>
 
@@ -1681,8 +1672,6 @@ function createGame(hostNick) {
 
         currentHandSize: 0,
 
-        roundTransitionTimer: null,
-
         phase: "lobby",
 
         dealerStart: 0,
@@ -2124,28 +2113,6 @@ function finishRound() {
 // CYCLE END
 // ------------------------------------------------------------
 
-    sendFullState();
-
-    clearTimeout(game.roundTransitionTimer);
-
-    const cycleSizes =
-        getRoundSizes(game.players.length);
-
-    game.roundTransitionTimer = setTimeout(() => {
-
-        if (!game || game.phase !== "roundResult") {
-            return;
-        }
-
-        if (game.roundIndex >= cycleSizes.length - 1) {
-            finishCycle();
-        } else {
-            startRound();
-        }
-
-    }, 1800);
-
-
 function finishCycle() {
 
     const maxScore =
@@ -2356,158 +2323,92 @@ function renderRoundHistory() {
 
     if (!body || !game) return;
 
-    const players = game.players || [];
     const history = game.roundHistory || [];
-    const sizes = getRoundSizes(players.length);
+    const players = game.players || [];
 
     const headerRow = head.parentNode;
 
+    // Удаляем старые колонки игроков, оставляя первые две.
     while (headerRow.children.length > 2) {
         headerRow.removeChild(headerRow.lastElementChild);
     }
 
     players.forEach(player => {
+
         const th = document.createElement("th");
         th.textContent = player.nick;
         headerRow.appendChild(th);
+
     });
 
     body.innerHTML = "";
 
-    sizes.forEach((size, index) => {
+    history.forEach(item => {
 
         const row = document.createElement("tr");
 
-        if (game.roundIndex === index) {
-            row.classList.add("current-round");
-        }
+        const roundCell = document.createElement("td");
+        roundCell.textContent = item.round;
+        row.appendChild(roundCell);
 
-        const c1 = document.createElement("td");
-        c1.textContent = index + 1;
-        row.appendChild(c1);
+        const handCell = document.createElement("td");
+        handCell.textContent = item.handSize;
+        row.appendChild(handCell);
 
-        const c2 = document.createElement("td");
-        c2.textContent = size;
-        row.appendChild(c2);
-
-        const completed = history.find(h => h.round === index + 1);
-
-        players.forEach(player => {
+        item.scores.forEach(score => {
 
             const cell = document.createElement("td");
 
-            if (completed) {
+            const sign =
+                score.roundScore > 0
+                    ? "+"
+                    : "";
 
-                const score = completed.scores.find(
-                    s => s.nick === player.nick
-                );
-
-                if (score) {
-                    const sign = score.roundScore > 0 ? "+" : "";
-                    cell.textContent =
-                        `${sign}${score.roundScore} (${score.totalScore})`;
-                } else {
-                    cell.textContent = "—";
-                }
-
-            } else if (game.roundIndex === index) {
-
-                cell.textContent = "•";
-
-            } else {
-
-                cell.textContent = "—";
-
-            }
+            cell.textContent =
+                `${sign}${score.roundScore} (${score.totalScore})`;
 
             row.appendChild(cell);
+
         });
 
         body.appendChild(row);
+
     });
 
-    // Additional 6-tile rounds are added after a tie.
-    const standardFinished =
-        game.roundIndex >= sizes.length - 1;
+    const currentSize =
+        getCurrentReferenceRoundSize();
 
-    if (standardFinished && game.phase !== "finished") {
-
-        const tieRows =
-            Math.max(
-                1,
-                history.filter(h => h.round > sizes.length).length + 1
-            );
-
-        for (let i = 0; i < tieRows; i++) {
-
-            const row = document.createElement("tr");
-            row.classList.add("tie-break-row");
-
-            const roundNo = sizes.length + i + 1;
-
-            const c1 = document.createElement("td");
-            c1.textContent = roundNo;
-            row.appendChild(c1);
-
-            const c2 = document.createElement("td");
-            c2.textContent = "6";
-            row.appendChild(c2);
-
-            const completed = history.find(h => h.round === roundNo);
-
-            players.forEach(player => {
-
-                const cell = document.createElement("td");
-
-                if (completed) {
-
-                    const score = completed.scores.find(
-                        s => s.nick === player.nick
-                    );
-
-                    if (score) {
-                        const sign = score.roundScore > 0 ? "+" : "";
-                        cell.textContent =
-                            `${sign}${score.roundScore} (${score.totalScore})`;
-                    } else {
-                        cell.textContent = "—";
-                    }
-
-                } else {
-                    cell.textContent = "—";
-                }
-
-                row.appendChild(cell);
-            });
-
-            body.appendChild(row);
-        }
-    }
+    const remainingItems =
+        getRemainingReferenceRounds();
 
     if (game.phase === "finished") {
 
         remaining.textContent =
             game.winner
-                ? "Все коны завершены"
+                ? "Цикл завершён"
                 : "Игра завершена";
 
-    } else if (game.roundIndex < sizes.length - 1) {
-
-        const left = sizes.length - game.roundIndex - 1;
+    } else if (remainingItems.tie) {
 
         remaining.textContent =
-            `Осталось после текущего: ${left} — ` +
-            formatRoundSizes(sizes.slice(game.roundIndex + 1));
+            "Далее: дополнительные коны по 6 костей — до единоличного лидера";
+
+    } else if (remainingItems.sizes.length === 0) {
+
+        remaining.textContent =
+            "После текущего кона плановых конов не останется";
 
     } else {
 
         remaining.textContent =
-            "Далее: дополнительные коны по 6 костей до единоличного лидера";
+            `После текущего: ${remainingItems.sizes.length} — ${formatRoundSizes(remainingItems.sizes)}`;
+
     }
 
     note.textContent =
-        `Сыграно конов: ${history.length}. ` +
-        `• — текущий кон, — — ещё не сыгран.`;
+        currentSize
+            ? `Сейчас: кон ${game.roundIndex + 1} — ${currentSize} костей. В таблице только завершённые коны.`
+            : "В таблице только завершённые коны.";
 
 }
 
