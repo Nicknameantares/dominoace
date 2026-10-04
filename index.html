@@ -7,7 +7,7 @@
 
 <title>Домино — онлайн</title>
 
-<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 
 <style>
 * {
@@ -1182,37 +1182,18 @@ function createHost() {
 
     if (!nick) return;
 
-    if (typeof Peer !== "function") {
-        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
-        return;
-    }
-
-    // Не оставляем старое соединение/состояние при повторной попытке.
-    try {
-        if (peer) peer.destroy();
-    } catch (e) {}
-
-    connections = {};
-    game = null;
-    myId = null;
     isHost = true;
 
-    // Короткий код остаётся удобным для ссылки, а Peer ID использует тот же код.
     roomCode = randomRoomCode();
 
-    const peerId = "domino-" + roomCode;
+    /*
+        Используем код комнаты как Peer ID.
 
-    try {
-        peer = new Peer(peerId, {
-            debug: 1
-        });
-    } catch (e) {
-        console.error(e);
-        isHost = false;
-        peer = null;
-        toast("Не удалось создать игру");
-        return;
-    }
+        Это позволяет другому игроку подключиться,
+        зная только код.
+    */
+
+    peer = new Peer("domino-" + roomCode);
 
     peer.on("open", id => {
 
@@ -1222,18 +1203,9 @@ function createHost() {
 
         showLobby();
 
-        toast("Игра создана. Отправьте ссылку друзьям.");
-
     });
 
     peer.on("connection", conn => {
-
-        if (!game || game.phase !== "lobby") {
-            try {
-                conn.close();
-            } catch (e) {}
-            return;
-        }
 
         setupConnection(conn);
 
@@ -1241,7 +1213,7 @@ function createHost() {
 
     peer.on("error", err => {
 
-        console.error("PeerJS host error:", err);
+        console.error(err);
 
         if (err.type === "unavailable-id") {
 
@@ -1249,29 +1221,17 @@ function createHost() {
                 peer.destroy();
             } catch (e) {}
 
-            peer = null;
-            myId = null;
             roomCode = null;
+            isHost = false;
 
-            // Генерируем новую комнату и пробуем ещё раз.
-            setTimeout(() => createHost(), 150);
-            return;
+            setTimeout(createHost, 100);
+
+        } else {
+
+            toast("Ошибка соединения");
+
         }
 
-        const messageMap = {
-            "browser-incompatible": "Этот браузер не поддерживает WebRTC.",
-            "network": "Нет соединения с сервером сигнализации PeerJS.",
-            "server-error": "Сервер PeerJS временно недоступен.",
-            "socket-error": "Ошибка сетевого соединения.",
-            "socket-closed": "Соединение с PeerJS закрыто."
-        };
-
-        toast(messageMap[err.type] || "Ошибка соединения");
-
-    });
-
-    peer.on("disconnected", () => {
-        toast("Соединение с сервером потеряно. Переподключитесь к странице.");
     });
 }
 
@@ -1282,42 +1242,19 @@ function joinRoom() {
 
     if (!nick) return;
 
-    if (typeof Peer !== "function") {
-        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
-        return;
-    }
-
     const code = getRoomFromUrl();
 
     if (!code) {
+
         toast("Откройте ссылку-приглашение");
+
         return;
     }
 
-    // Не допускаем повторного параллельного подключения.
-    if (peer && !peer.destroyed) {
-        try { peer.destroy(); } catch (e) {}
-    }
-
-    connections = {};
-    game = null;
-    myId = null;
     isHost = false;
     roomCode = code;
 
-    try {
-        peer = new Peer({
-            debug: 1
-        });
-    } catch (e) {
-        console.error(e);
-        peer = null;
-        toast("Не удалось подключиться к игре");
-        return;
-    }
-
-    let connectionOpened = false;
-    let connectionTimeout = null;
+    peer = new Peer();
 
     peer.on("open", id => {
 
@@ -1326,27 +1263,13 @@ function joinRoom() {
         const conn = peer.connect(
             "domino-" + roomCode,
             {
-                reliable: true,
-                serialization: "json"
+                reliable: true
             }
         );
 
         setupConnection(conn);
 
-        connectionTimeout = setTimeout(() => {
-            if (connectionOpened) return;
-
-            try {
-                conn.close();
-            } catch (e) {}
-
-            toast("Игра не найдена или ведущий ещё не в сети.");
-        }, 10000);
-
         conn.on("open", () => {
-
-            connectionOpened = true;
-            clearTimeout(connectionTimeout);
 
             conn.send({
                 type: "join",
@@ -1354,30 +1277,21 @@ function joinRoom() {
             });
 
             showLobby();
-            toast("Подключено. Ожидаем начало игры.");
 
         });
 
-        conn.on("error", err => {
-            console.error("PeerJS connection error:", err);
-            clearTimeout(connectionTimeout);
-            toast(
-                err && err.type === "peer-unavailable"
-                    ? "Игра не найдена или ведущий отключён."
-                    : "Не удалось подключиться к игре"
-            );
+        conn.on("error", () => {
+            toast("Не удалось подключиться к игре");
         });
 
         conn.on("close", () => {
-            clearTimeout(connectionTimeout);
-
             if (!isHost) {
                 if (game && game.phase !== "finished") {
                     game.endReason = "Соединение с ведущим игры потеряно.";
                     game.phase = "finished";
                     game.winner = null;
                     render();
-                } else if (connectionOpened) {
+                } else {
                     toast("Соединение с игрой потеряно");
                 }
             }
@@ -1387,31 +1301,12 @@ function joinRoom() {
 
     peer.on("error", err => {
 
-        console.error("PeerJS guest error:", err);
+        console.error(err);
 
-        clearTimeout(connectionTimeout);
+        toast("Не удалось подключиться к игре");
 
-        const messageMap = {
-            "browser-incompatible": "Этот браузер не поддерживает WebRTC.",
-            "network": "Нет соединения с сервером сигнализации PeerJS.",
-            "server-error": "Сервер PeerJS временно недоступен.",
-            "socket-error": "Ошибка сетевого соединения.",
-            "socket-closed": "Соединение с PeerJS закрыто."
-        };
-
-        toast(
-            err && err.type === "peer-unavailable"
-                ? "Игра не найдена или ведущий ещё не в сети."
-                : (messageMap[err?.type] || "Не удалось подключиться к игре")
-        );
-
-    });
-
-    peer.on("disconnected", () => {
-        toast("Соединение с сервером потеряно.");
     });
 }
-
 
 function setupConnection(conn) {
 
@@ -2228,6 +2123,28 @@ function finishRound() {
 // ------------------------------------------------------------
 // CYCLE END
 // ------------------------------------------------------------
+
+    sendFullState();
+
+    clearTimeout(game.roundTransitionTimer);
+
+    const cycleSizes =
+        getRoundSizes(game.players.length);
+
+    game.roundTransitionTimer = setTimeout(() => {
+
+        if (!game || game.phase !== "roundResult") {
+            return;
+        }
+
+        if (game.roundIndex >= cycleSizes.length - 1) {
+            finishCycle();
+        } else {
+            startRound();
+        }
+
+    }, 1800);
+
 
 function finishCycle() {
 
