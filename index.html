@@ -7,7 +7,6 @@
 
 <title>Домино — онлайн</title>
 
-<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 
 <style>
 * {
@@ -686,11 +685,11 @@ input:focus {
                 autocomplete="off"
             >
 
-            <button class="btn" id="createBtn">
+            <button type="button" class="btn" id="createBtn">
                 Создать игру
             </button>
 
-            <button class="btn secondary" id="joinBtn">
+            <button type="button" class="btn secondary" id="joinBtn">
                 Войти по ссылке
             </button>
 
@@ -703,7 +702,7 @@ input:focus {
                 Введите свой ник и нажмите «Войти в игру».
             </div>
 
-            <button class="btn" id="connectBtn">
+            <button type="button" class="btn" id="connectBtn">
                 Войти в игру
             </button>
 
@@ -899,7 +898,23 @@ const joinLinkHint = $("joinLinkHint");
 // LOCAL STORAGE
 // ------------------------------------------------------------
 
-const savedNick = localStorage.getItem("domino_nickname");
+function storageGet(key) {
+    try {
+        return window.localStorage.getItem(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+function storageSet(key, value) {
+    try {
+        window.localStorage.setItem(key, value);
+    } catch (e) {
+        // Storage can be blocked by private mode / browser policy.
+    }
+}
+
+const savedNick = storageGet("domino_nickname");
 
 if (savedNick) {
     nicknameInput.value = savedNick;
@@ -958,7 +973,7 @@ function normalizeNick() {
         return null;
     }
 
-    localStorage.setItem("domino_nickname", nick);
+    storageSet("domino_nickname", nick);
 
     return nick;
 }
@@ -1176,15 +1191,89 @@ function dominoHTML(tile, vertical = false, extraClass = "") {
 // NETWORK
 // ------------------------------------------------------------
 
+let peerJsPromise = null;
+
+function ensurePeerJS() {
+
+    if (typeof window.Peer === "function") {
+        return Promise.resolve();
+    }
+
+    if (peerJsPromise) {
+        return peerJsPromise;
+    }
+
+    const sources = [
+        "https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js",
+        "https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"
+    ];
+
+    peerJsPromise = new Promise((resolve, reject) => {
+
+        let index = 0;
+
+        const loadNext = () => {
+
+            if (typeof window.Peer === "function") {
+                resolve();
+                return;
+            }
+
+            if (index >= sources.length) {
+                reject(new Error("PeerJS не загрузился"));
+                return;
+            }
+
+            const script = document.createElement("script");
+            script.src = sources[index++];
+            script.async = true;
+
+            script.onload = () => {
+                if (typeof window.Peer === "function") {
+                    resolve();
+                } else {
+                    loadNext();
+                }
+            };
+
+            script.onerror = () => loadNext();
+
+            document.head.appendChild(script);
+        };
+
+        loadNext();
+    }).catch(error => {
+        peerJsPromise = null;
+        throw error;
+    });
+
+    return peerJsPromise;
+}
+
 function createHost() {
+
+    toast("Создаём игру…");
 
     const nick = normalizeNick();
 
     if (!nick) return;
 
+    const button = $("createBtn");
+    button.disabled = true;
+
+    ensurePeerJS()
+        .then(() => createHostWithPeer(nick))
+        .catch(error => {
+            console.error("PeerJS load error:", error);
+            button.disabled = false;
+            toast("Не удалось загрузить игровой модуль. Проверьте интернет-соединение и обновите страницу.");
+        });
+}
+
+function createHostWithPeer(nick) {
+
     if (typeof Peer !== "function") {
-        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
-        return;
+        throw new Error("PeerJS is not available");
     }
 
     // Не оставляем старое соединение/состояние при повторной попытке.
@@ -1210,16 +1299,32 @@ function createHost() {
         console.error(e);
         isHost = false;
         peer = null;
+        $("createBtn").disabled = false;
         toast("Не удалось создать игру");
         return;
     }
 
+    let hostOpened = false;
+    const hostOpenTimeout = setTimeout(() => {
+        if (hostOpened || !peer) return;
+        console.error("PeerJS host open timeout");
+        try { peer.destroy(); } catch (e) {}
+        peer = null;
+        isHost = false;
+        $("createBtn").disabled = false;
+        toast("Не удалось подключить игру к серверу. Проверьте интернет и нажмите «Создать игру» ещё раз.");
+    }, 12000);
+
     peer.on("open", id => {
+
+        hostOpened = true;
+        clearTimeout(hostOpenTimeout);
 
         myId = id;
 
         createGame(nick);
 
+        $("createBtn").disabled = false;
         showLobby();
 
         toast("Игра создана. Отправьте ссылку друзьям.");
@@ -1241,6 +1346,8 @@ function createHost() {
 
     peer.on("error", err => {
 
+        clearTimeout(hostOpenTimeout);
+        $("createBtn").disabled = false;
         console.error("PeerJS host error:", err);
 
         if (err.type === "unavailable-id") {
@@ -1282,16 +1389,27 @@ function joinRoom() {
 
     if (!nick) return;
 
-    if (typeof Peer !== "function") {
-        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
-        return;
-    }
-
     const code = getRoomFromUrl();
 
     if (!code) {
         toast("Откройте ссылку-приглашение");
         return;
+    }
+
+    toast("Подключаемся к игре…");
+
+    ensurePeerJS()
+        .then(() => joinRoomWithPeer(nick, code))
+        .catch(error => {
+            console.error("PeerJS load error:", error);
+            toast("Не удалось загрузить игровой модуль. Проверьте интернет-соединение и обновите страницу.");
+        });
+}
+
+function joinRoomWithPeer(nick, code) {
+
+    if (typeof Peer !== "function") {
+        throw new Error("PeerJS is not available");
     }
 
     // Не допускаем повторного параллельного подключения.
