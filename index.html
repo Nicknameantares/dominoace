@@ -7,7 +7,7 @@
 
 <title>Домино — онлайн</title>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 
 <style>
 * {
@@ -1182,18 +1182,37 @@ function createHost() {
 
     if (!nick) return;
 
+    if (typeof Peer !== "function") {
+        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
+        return;
+    }
+
+    // Не оставляем старое соединение/состояние при повторной попытке.
+    try {
+        if (peer) peer.destroy();
+    } catch (e) {}
+
+    connections = {};
+    game = null;
+    myId = null;
     isHost = true;
 
+    // Короткий код остаётся удобным для ссылки, а Peer ID использует тот же код.
     roomCode = randomRoomCode();
 
-    /*
-        Используем код комнаты как Peer ID.
+    const peerId = "domino-" + roomCode;
 
-        Это позволяет другому игроку подключиться,
-        зная только код.
-    */
-
-    peer = new Peer("domino-" + roomCode);
+    try {
+        peer = new Peer(peerId, {
+            debug: 1
+        });
+    } catch (e) {
+        console.error(e);
+        isHost = false;
+        peer = null;
+        toast("Не удалось создать игру");
+        return;
+    }
 
     peer.on("open", id => {
 
@@ -1203,9 +1222,18 @@ function createHost() {
 
         showLobby();
 
+        toast("Игра создана. Отправьте ссылку друзьям.");
+
     });
 
     peer.on("connection", conn => {
+
+        if (!game || game.phase !== "lobby") {
+            try {
+                conn.close();
+            } catch (e) {}
+            return;
+        }
 
         setupConnection(conn);
 
@@ -1213,7 +1241,7 @@ function createHost() {
 
     peer.on("error", err => {
 
-        console.error(err);
+        console.error("PeerJS host error:", err);
 
         if (err.type === "unavailable-id") {
 
@@ -1221,17 +1249,29 @@ function createHost() {
                 peer.destroy();
             } catch (e) {}
 
+            peer = null;
+            myId = null;
             roomCode = null;
-            isHost = false;
 
-            setTimeout(createHost, 100);
-
-        } else {
-
-            toast("Ошибка соединения");
-
+            // Генерируем новую комнату и пробуем ещё раз.
+            setTimeout(() => createHost(), 150);
+            return;
         }
 
+        const messageMap = {
+            "browser-incompatible": "Этот браузер не поддерживает WebRTC.",
+            "network": "Нет соединения с сервером сигнализации PeerJS.",
+            "server-error": "Сервер PeerJS временно недоступен.",
+            "socket-error": "Ошибка сетевого соединения.",
+            "socket-closed": "Соединение с PeerJS закрыто."
+        };
+
+        toast(messageMap[err.type] || "Ошибка соединения");
+
+    });
+
+    peer.on("disconnected", () => {
+        toast("Соединение с сервером потеряно. Переподключитесь к странице.");
     });
 }
 
@@ -1242,19 +1282,42 @@ function joinRoom() {
 
     if (!nick) return;
 
-    const code = getRoomFromUrl();
-
-    if (!code) {
-
-        toast("Откройте ссылку-приглашение");
-
+    if (typeof Peer !== "function") {
+        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
         return;
     }
 
+    const code = getRoomFromUrl();
+
+    if (!code) {
+        toast("Откройте ссылку-приглашение");
+        return;
+    }
+
+    // Не допускаем повторного параллельного подключения.
+    if (peer && !peer.destroyed) {
+        try { peer.destroy(); } catch (e) {}
+    }
+
+    connections = {};
+    game = null;
+    myId = null;
     isHost = false;
     roomCode = code;
 
-    peer = new Peer();
+    try {
+        peer = new Peer({
+            debug: 1
+        });
+    } catch (e) {
+        console.error(e);
+        peer = null;
+        toast("Не удалось подключиться к игре");
+        return;
+    }
+
+    let connectionOpened = false;
+    let connectionTimeout = null;
 
     peer.on("open", id => {
 
@@ -1263,13 +1326,27 @@ function joinRoom() {
         const conn = peer.connect(
             "domino-" + roomCode,
             {
-                reliable: true
+                reliable: true,
+                serialization: "json"
             }
         );
 
         setupConnection(conn);
 
+        connectionTimeout = setTimeout(() => {
+            if (connectionOpened) return;
+
+            try {
+                conn.close();
+            } catch (e) {}
+
+            toast("Игра не найдена или ведущий ещё не в сети.");
+        }, 10000);
+
         conn.on("open", () => {
+
+            connectionOpened = true;
+            clearTimeout(connectionTimeout);
 
             conn.send({
                 type: "join",
@@ -1277,21 +1354,30 @@ function joinRoom() {
             });
 
             showLobby();
+            toast("Подключено. Ожидаем начало игры.");
 
         });
 
-        conn.on("error", () => {
-            toast("Не удалось подключиться к игре");
+        conn.on("error", err => {
+            console.error("PeerJS connection error:", err);
+            clearTimeout(connectionTimeout);
+            toast(
+                err && err.type === "peer-unavailable"
+                    ? "Игра не найдена или ведущий отключён."
+                    : "Не удалось подключиться к игре"
+            );
         });
 
         conn.on("close", () => {
+            clearTimeout(connectionTimeout);
+
             if (!isHost) {
                 if (game && game.phase !== "finished") {
                     game.endReason = "Соединение с ведущим игры потеряно.";
                     game.phase = "finished";
                     game.winner = null;
                     render();
-                } else {
+                } else if (connectionOpened) {
                     toast("Соединение с игрой потеряно");
                 }
             }
@@ -1301,12 +1387,31 @@ function joinRoom() {
 
     peer.on("error", err => {
 
-        console.error(err);
+        console.error("PeerJS guest error:", err);
 
-        toast("Не удалось подключиться к игре");
+        clearTimeout(connectionTimeout);
+
+        const messageMap = {
+            "browser-incompatible": "Этот браузер не поддерживает WebRTC.",
+            "network": "Нет соединения с сервером сигнализации PeerJS.",
+            "server-error": "Сервер PeerJS временно недоступен.",
+            "socket-error": "Ошибка сетевого соединения.",
+            "socket-closed": "Соединение с PeerJS закрыто."
+        };
+
+        toast(
+            err && err.type === "peer-unavailable"
+                ? "Игра не найдена или ведущий ещё не в сети."
+                : (messageMap[err?.type] || "Не удалось подключиться к игре")
+        );
 
     });
+
+    peer.on("disconnected", () => {
+        toast("Соединение с сервером потеряно.");
+    });
 }
+
 
 function setupConnection(conn) {
 
@@ -2067,6 +2172,13 @@ function calculateRoundScore(player) {
 
 function finishRound() {
 
+    if (!game) return;
+
+    // Защита от повторного завершения одного и того же кона.
+    if (game.phase === "roundResult" || game.phase === "finished") {
+        return;
+    }
+
     game.phase = "roundResult";
 
     game.players.forEach(player => {
@@ -2089,47 +2201,19 @@ function finishRound() {
         }))
     });
 
-    sendFullState();
-
     /*
-        Показываем результат кона.
+        КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
+        таймер следующего кона ставим ДО обновления UI/сети.
+
+        Если при отрисовке результата или отправке состояния
+        произойдёт исключение, переход к следующему кону всё равно
+        уже запланирован. Таймер также хранится в game, чтобы не
+        получить двойной запуск.
     */
-
-    setTimeout(() => {
-
-        if (!game) return;
-
-        /*
-            Проверяем, закончился ли цикл.
-        */
-
-        if (
-            game.roundIndex + 1
-            >= game.roundTotal
-        ) {
-
-            finishCycle();
-
-        } else {
-
-            startRound();
-
-        }
-
-    }, 2200);
-}
-
-
-// ------------------------------------------------------------
-// CYCLE END
-// ------------------------------------------------------------
-
-    sendFullState();
-
     clearTimeout(game.roundTransitionTimer);
 
-    const cycleSizes =
-        getRoundSizes(game.players.length);
+    const finishThisCycle =
+        game.roundIndex + 1 >= game.roundTotal;
 
     game.roundTransitionTimer = setTimeout(() => {
 
@@ -2137,14 +2221,49 @@ function finishRound() {
             return;
         }
 
-        if (game.roundIndex >= cycleSizes.length - 1) {
-            finishCycle();
-        } else {
-            startRound();
+        game.roundTransitionTimer = null;
+
+        try {
+            if (finishThisCycle) {
+                finishCycle();
+            } else {
+                startRound();
+            }
+        } catch (error) {
+            console.error("Ошибка перехода к следующему кону:", error);
+
+            // Не оставляем игру навсегда в roundResult.
+            // Повторяем попытку один раз через секунду.
+            game.roundTransitionTimer = setTimeout(() => {
+                if (!game || game.phase !== "roundResult") return;
+
+                try {
+                    if (finishThisCycle) {
+                        finishCycle();
+                    } else {
+                        startRound();
+                    }
+                } catch (retryError) {
+                    console.error("Повторная ошибка перехода к следующему кону:", retryError);
+                    toast("Не удалось автоматически начать следующий кон. Обновите страницу у ведущего.");
+                }
+            }, 1000);
         }
 
     }, 1800);
 
+    // Результат кона показываем уже после установки таймера.
+    try {
+        sendFullState();
+    } catch (error) {
+        console.error("Ошибка отображения результата кона:", error);
+    }
+}
+
+
+// ------------------------------------------------------------
+// CYCLE END
+// ------------------------------------------------------------
 
 function finishCycle() {
 
