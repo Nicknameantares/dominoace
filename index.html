@@ -7,7 +7,7 @@
 
 <title>Домино — онлайн</title>
 
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
 
 <style>
 * {
@@ -649,6 +649,15 @@ input:focus {
 
 }
 
+<style>
+.round-history-table tr.current-round td {
+    font-weight: 800;
+    background: #f5f3ed;
+}
+
+.round-history-table tr.tie-break-row td {
+    font-style: italic;
+}
 </style>
 </head>
 
@@ -1173,18 +1182,37 @@ function createHost() {
 
     if (!nick) return;
 
+    if (typeof Peer !== "function") {
+        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
+        return;
+    }
+
+    // Не оставляем старое соединение/состояние при повторной попытке.
+    try {
+        if (peer) peer.destroy();
+    } catch (e) {}
+
+    connections = {};
+    game = null;
+    myId = null;
     isHost = true;
 
+    // Короткий код остаётся удобным для ссылки, а Peer ID использует тот же код.
     roomCode = randomRoomCode();
 
-    /*
-        Используем код комнаты как Peer ID.
+    const peerId = "domino-" + roomCode;
 
-        Это позволяет другому игроку подключиться,
-        зная только код.
-    */
-
-    peer = new Peer("domino-" + roomCode);
+    try {
+        peer = new Peer(peerId, {
+            debug: 1
+        });
+    } catch (e) {
+        console.error(e);
+        isHost = false;
+        peer = null;
+        toast("Не удалось создать игру");
+        return;
+    }
 
     peer.on("open", id => {
 
@@ -1194,9 +1222,18 @@ function createHost() {
 
         showLobby();
 
+        toast("Игра создана. Отправьте ссылку друзьям.");
+
     });
 
     peer.on("connection", conn => {
+
+        if (!game || game.phase !== "lobby") {
+            try {
+                conn.close();
+            } catch (e) {}
+            return;
+        }
 
         setupConnection(conn);
 
@@ -1204,7 +1241,7 @@ function createHost() {
 
     peer.on("error", err => {
 
-        console.error(err);
+        console.error("PeerJS host error:", err);
 
         if (err.type === "unavailable-id") {
 
@@ -1212,17 +1249,29 @@ function createHost() {
                 peer.destroy();
             } catch (e) {}
 
+            peer = null;
+            myId = null;
             roomCode = null;
-            isHost = false;
 
-            setTimeout(createHost, 100);
-
-        } else {
-
-            toast("Ошибка соединения");
-
+            // Генерируем новую комнату и пробуем ещё раз.
+            setTimeout(() => createHost(), 150);
+            return;
         }
 
+        const messageMap = {
+            "browser-incompatible": "Этот браузер не поддерживает WebRTC.",
+            "network": "Нет соединения с сервером сигнализации PeerJS.",
+            "server-error": "Сервер PeerJS временно недоступен.",
+            "socket-error": "Ошибка сетевого соединения.",
+            "socket-closed": "Соединение с PeerJS закрыто."
+        };
+
+        toast(messageMap[err.type] || "Ошибка соединения");
+
+    });
+
+    peer.on("disconnected", () => {
+        toast("Соединение с сервером потеряно. Переподключитесь к странице.");
     });
 }
 
@@ -1233,19 +1282,42 @@ function joinRoom() {
 
     if (!nick) return;
 
-    const code = getRoomFromUrl();
-
-    if (!code) {
-
-        toast("Откройте ссылку-приглашение");
-
+    if (typeof Peer !== "function") {
+        toast("Не удалось загрузить сетевой модуль. Обновите страницу.");
         return;
     }
 
+    const code = getRoomFromUrl();
+
+    if (!code) {
+        toast("Откройте ссылку-приглашение");
+        return;
+    }
+
+    // Не допускаем повторного параллельного подключения.
+    if (peer && !peer.destroyed) {
+        try { peer.destroy(); } catch (e) {}
+    }
+
+    connections = {};
+    game = null;
+    myId = null;
     isHost = false;
     roomCode = code;
 
-    peer = new Peer();
+    try {
+        peer = new Peer({
+            debug: 1
+        });
+    } catch (e) {
+        console.error(e);
+        peer = null;
+        toast("Не удалось подключиться к игре");
+        return;
+    }
+
+    let connectionOpened = false;
+    let connectionTimeout = null;
 
     peer.on("open", id => {
 
@@ -1254,13 +1326,27 @@ function joinRoom() {
         const conn = peer.connect(
             "domino-" + roomCode,
             {
-                reliable: true
+                reliable: true,
+                serialization: "json"
             }
         );
 
         setupConnection(conn);
 
+        connectionTimeout = setTimeout(() => {
+            if (connectionOpened) return;
+
+            try {
+                conn.close();
+            } catch (e) {}
+
+            toast("Игра не найдена или ведущий ещё не в сети.");
+        }, 10000);
+
         conn.on("open", () => {
+
+            connectionOpened = true;
+            clearTimeout(connectionTimeout);
 
             conn.send({
                 type: "join",
@@ -1268,21 +1354,30 @@ function joinRoom() {
             });
 
             showLobby();
+            toast("Подключено. Ожидаем начало игры.");
 
         });
 
-        conn.on("error", () => {
-            toast("Не удалось подключиться к игре");
+        conn.on("error", err => {
+            console.error("PeerJS connection error:", err);
+            clearTimeout(connectionTimeout);
+            toast(
+                err && err.type === "peer-unavailable"
+                    ? "Игра не найдена или ведущий отключён."
+                    : "Не удалось подключиться к игре"
+            );
         });
 
         conn.on("close", () => {
+            clearTimeout(connectionTimeout);
+
             if (!isHost) {
                 if (game && game.phase !== "finished") {
                     game.endReason = "Соединение с ведущим игры потеряно.";
                     game.phase = "finished";
                     game.winner = null;
                     render();
-                } else {
+                } else if (connectionOpened) {
                     toast("Соединение с игрой потеряно");
                 }
             }
@@ -1292,12 +1387,31 @@ function joinRoom() {
 
     peer.on("error", err => {
 
-        console.error(err);
+        console.error("PeerJS guest error:", err);
 
-        toast("Не удалось подключиться к игре");
+        clearTimeout(connectionTimeout);
+
+        const messageMap = {
+            "browser-incompatible": "Этот браузер не поддерживает WebRTC.",
+            "network": "Нет соединения с сервером сигнализации PeerJS.",
+            "server-error": "Сервер PeerJS временно недоступен.",
+            "socket-error": "Ошибка сетевого соединения.",
+            "socket-closed": "Соединение с PeerJS закрыто."
+        };
+
+        toast(
+            err && err.type === "peer-unavailable"
+                ? "Игра не найдена или ведущий ещё не в сети."
+                : (messageMap[err?.type] || "Не удалось подключиться к игре")
+        );
 
     });
+
+    peer.on("disconnected", () => {
+        toast("Соединение с сервером потеряно.");
+    });
 }
+
 
 function setupConnection(conn) {
 
@@ -1671,6 +1785,8 @@ function createGame(hostNick) {
         roundTotal: 0,
 
         currentHandSize: 0,
+
+        roundTransitionTimer: null,
 
         phase: "lobby",
 
@@ -2323,92 +2439,158 @@ function renderRoundHistory() {
 
     if (!body || !game) return;
 
-    const history = game.roundHistory || [];
     const players = game.players || [];
+    const history = game.roundHistory || [];
+    const sizes = getRoundSizes(players.length);
 
     const headerRow = head.parentNode;
 
-    // Удаляем старые колонки игроков, оставляя первые две.
     while (headerRow.children.length > 2) {
         headerRow.removeChild(headerRow.lastElementChild);
     }
 
     players.forEach(player => {
-
         const th = document.createElement("th");
         th.textContent = player.nick;
         headerRow.appendChild(th);
-
     });
 
     body.innerHTML = "";
 
-    history.forEach(item => {
+    sizes.forEach((size, index) => {
 
         const row = document.createElement("tr");
 
-        const roundCell = document.createElement("td");
-        roundCell.textContent = item.round;
-        row.appendChild(roundCell);
+        if (game.roundIndex === index) {
+            row.classList.add("current-round");
+        }
 
-        const handCell = document.createElement("td");
-        handCell.textContent = item.handSize;
-        row.appendChild(handCell);
+        const c1 = document.createElement("td");
+        c1.textContent = index + 1;
+        row.appendChild(c1);
 
-        item.scores.forEach(score => {
+        const c2 = document.createElement("td");
+        c2.textContent = size;
+        row.appendChild(c2);
+
+        const completed = history.find(h => h.round === index + 1);
+
+        players.forEach(player => {
 
             const cell = document.createElement("td");
 
-            const sign =
-                score.roundScore > 0
-                    ? "+"
-                    : "";
+            if (completed) {
 
-            cell.textContent =
-                `${sign}${score.roundScore} (${score.totalScore})`;
+                const score = completed.scores.find(
+                    s => s.nick === player.nick
+                );
+
+                if (score) {
+                    const sign = score.roundScore > 0 ? "+" : "";
+                    cell.textContent =
+                        `${sign}${score.roundScore} (${score.totalScore})`;
+                } else {
+                    cell.textContent = "—";
+                }
+
+            } else if (game.roundIndex === index) {
+
+                cell.textContent = "•";
+
+            } else {
+
+                cell.textContent = "—";
+
+            }
 
             row.appendChild(cell);
-
         });
 
         body.appendChild(row);
-
     });
 
-    const currentSize =
-        getCurrentReferenceRoundSize();
+    // Additional 6-tile rounds are added after a tie.
+    const standardFinished =
+        game.roundIndex >= sizes.length - 1;
 
-    const remainingItems =
-        getRemainingReferenceRounds();
+    if (standardFinished && game.phase !== "finished") {
+
+        const tieRows =
+            Math.max(
+                1,
+                history.filter(h => h.round > sizes.length).length + 1
+            );
+
+        for (let i = 0; i < tieRows; i++) {
+
+            const row = document.createElement("tr");
+            row.classList.add("tie-break-row");
+
+            const roundNo = sizes.length + i + 1;
+
+            const c1 = document.createElement("td");
+            c1.textContent = roundNo;
+            row.appendChild(c1);
+
+            const c2 = document.createElement("td");
+            c2.textContent = "6";
+            row.appendChild(c2);
+
+            const completed = history.find(h => h.round === roundNo);
+
+            players.forEach(player => {
+
+                const cell = document.createElement("td");
+
+                if (completed) {
+
+                    const score = completed.scores.find(
+                        s => s.nick === player.nick
+                    );
+
+                    if (score) {
+                        const sign = score.roundScore > 0 ? "+" : "";
+                        cell.textContent =
+                            `${sign}${score.roundScore} (${score.totalScore})`;
+                    } else {
+                        cell.textContent = "—";
+                    }
+
+                } else {
+                    cell.textContent = "—";
+                }
+
+                row.appendChild(cell);
+            });
+
+            body.appendChild(row);
+        }
+    }
 
     if (game.phase === "finished") {
 
         remaining.textContent =
             game.winner
-                ? "Цикл завершён"
+                ? "Все коны завершены"
                 : "Игра завершена";
 
-    } else if (remainingItems.tie) {
+    } else if (game.roundIndex < sizes.length - 1) {
+
+        const left = sizes.length - game.roundIndex - 1;
 
         remaining.textContent =
-            "Далее: дополнительные коны по 6 костей — до единоличного лидера";
-
-    } else if (remainingItems.sizes.length === 0) {
-
-        remaining.textContent =
-            "После текущего кона плановых конов не останется";
+            `Осталось после текущего: ${left} — ` +
+            formatRoundSizes(sizes.slice(game.roundIndex + 1));
 
     } else {
 
         remaining.textContent =
-            `После текущего: ${remainingItems.sizes.length} — ${formatRoundSizes(remainingItems.sizes)}`;
-
+            "Далее: дополнительные коны по 6 костей до единоличного лидера";
     }
 
     note.textContent =
-        currentSize
-            ? `Сейчас: кон ${game.roundIndex + 1} — ${currentSize} костей. В таблице только завершённые коны.`
-            : "В таблице только завершённые коны.";
+        `Сыграно конов: ${history.length}. ` +
+        `• — текущий кон, — — ещё не сыгран.`;
 
 }
 
