@@ -648,7 +648,6 @@ input:focus {
 
 }
 
-<style>
 .round-history-table tr.current-round td {
     font-weight: 800;
     background: #f5f3ed;
@@ -740,6 +739,10 @@ input:focus {
             <div class="waiting" id="lobbyStatus">
                 Ожидаем игроков...
             </div>
+
+            <button class="btn" id="startGameBtn" style="display:none">
+                Начать игру
+            </button>
 
         </div>
 
@@ -935,6 +938,9 @@ let connections = {};
 
 let game = null;
 
+// Ведущий отказал во входе (комната заполнена или игра уже идёт).
+let joinRejected = false;
+
 
 // ------------------------------------------------------------
 // UTILS
@@ -1022,6 +1028,17 @@ function getShareUrl() {
     url.searchParams.set("room", roomCode);
 
     return url.toString();
+}
+
+
+function tilesWord(count) {
+
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+
+    if (mod10 === 1 && mod100 !== 11) return "кость";
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "кости";
+    return "костей";
 }
 
 
@@ -1252,11 +1269,11 @@ function ensurePeerJS() {
 
 function createHost() {
 
-    toast("Создаём игру…");
-
     const nick = normalizeNick();
 
     if (!nick) return;
+
+    toast("Создаём игру…");
 
     const button = $("createBtn");
     button.disabled = true;
@@ -1378,7 +1395,11 @@ function createHostWithPeer(nick) {
     });
 
     peer.on("disconnected", () => {
-        toast("Соединение с сервером потеряно. Переподключитесь к странице.");
+        // Уже открытые соединения с игроками продолжают работать,
+        // поэтому просто переподключаемся к серверу без перезагрузки страницы.
+        if (peer && !peer.destroyed) {
+            try { peer.reconnect(); } catch (e) {}
+        }
     });
 }
 
@@ -1422,6 +1443,7 @@ function joinRoomWithPeer(nick, code) {
     myId = null;
     isHost = false;
     roomCode = code;
+    joinRejected = false;
 
     try {
         peer = new Peer({
@@ -1496,7 +1518,8 @@ function joinRoomWithPeer(nick, code) {
                     game.winner = null;
                     render();
                 } else if (connectionOpened) {
-                    toast("Соединение с игрой потеряно");
+                    showScreen(homeScreen);
+                    if (!joinRejected) toast("Соединение с игрой потеряно");
                 }
             }
         });
@@ -1526,7 +1549,10 @@ function joinRoomWithPeer(nick, code) {
     });
 
     peer.on("disconnected", () => {
-        toast("Соединение с сервером потеряно.");
+        // Соединение с ведущим уже установлено напрямую, сервер нужен только для поиска.
+        if (peer && !peer.destroyed) {
+            try { peer.reconnect(); } catch (e) {}
+        }
     });
 }
 
@@ -1661,6 +1687,7 @@ function publicGameState() {
         trickNumber: game.trickNumber,
         lastTrickWinner: game.lastTrickWinner,
         winner: game.winner,
+        endReason: game.endReason || null,
         roundHistory: game.roundHistory || []
     };
 }
@@ -1714,11 +1741,19 @@ function handleMessage(message, conn) {
 
     if (isHost && message.type === "join") {
 
-        const nick = String(message.nick || "")
+        let nick = String(message.nick || "")
             .trim()
             .slice(0, 20);
 
         if (!nick) return;
+
+        // Одинаковые ники путают таблицу и сообщения, поэтому добавляем номер.
+        const baseNick = nick;
+        let suffix = 2;
+
+        while (game.players.some(p => p.nick === nick)) {
+            nick = `${baseNick.slice(0, 17)} ${suffix++}`;
+        }
 
         if (game.phase !== "lobby") {
 
@@ -1770,18 +1805,17 @@ function handleMessage(message, conn) {
         showLobby();
 
         /*
-            Игра автоматически начинается,
-            когда есть минимум 2 игрока.
-
-            Даём несколько секунд присоединиться
-            третьему/четвёртому.
+            Ведущий начинает игру кнопкой «Начать игру»,
+            когда собрались все желающие.
+            Если комната заполнена (4 игрока), игра стартует сама.
         */
 
-        if (game.players.length >= 2 && !game.startTimer) {
+        if (game.players.length >= 4 && !game.startTimer) {
 
             game.startTimer = setTimeout(() => {
 
                 if (
+                    game &&
                     game.players.length >= 2 &&
                     game.phase === "lobby"
                 ) {
@@ -1790,7 +1824,7 @@ function handleMessage(message, conn) {
 
                 }
 
-            }, 4000);
+            }, 2000);
 
         }
 
@@ -1825,6 +1859,12 @@ function handleMessage(message, conn) {
 
 
     if (!isHost && message.type === "error") {
+
+        // Ведущий отказал во входе: возвращаемся на главный экран.
+        if (!game || !game.players) {
+            joinRejected = true;
+            showScreen(homeScreen);
+        }
 
         toast(message.message);
 
@@ -1905,6 +1945,9 @@ function createGame(hostNick) {
         currentHandSize: 0,
 
         roundTransitionTimer: null,
+        roundAdvanceAt: 0,
+        roundAdvanceRunning: false,
+        roundAdvanceRoundIndex: -1,
 
         phase: "lobby",
 
@@ -1973,7 +2016,7 @@ function getRoundCount() {
 
 function startRound() {
 
-    if (!isHost) return;
+    if (!isHost || !game) return;
 
     const playerCount = game.players.length;
 
@@ -1987,6 +2030,15 @@ function startRound() {
 
         game.startTimer = null;
     }
+
+    if (game.roundTransitionTimer) {
+        clearTimeout(game.roundTransitionTimer);
+        game.roundTransitionTimer = null;
+    }
+
+    game.roundAdvanceAt = 0;
+    game.roundAdvanceRunning = false;
+    game.roundAdvanceRoundIndex = -1;
 
     game.roundIndex++;
 
@@ -2045,7 +2097,7 @@ function startRound() {
 
     sendFullState();
 
-    toast(`Кон ${game.roundIndex + 1}: по ${handSize} кост${handSize === 1 ? "и" : "ей"}`);
+    toast(`Кон ${game.roundIndex + 1}: ${handSize} ${tilesWord(handSize)} на руках`);
 }
 
 
@@ -2288,11 +2340,66 @@ function calculateRoundScore(player) {
 }
 
 
+function scheduleNextRound() {
+
+    if (!isHost || !game) return;
+
+    const completedRoundIndex = game.roundIndex;
+
+    // Только один переход для одного кона.
+    if (
+        game.roundAdvanceRoundIndex === completedRoundIndex &&
+        game.roundAdvanceAt > 0
+    ) {
+        return;
+    }
+
+    clearTimeout(game.roundTransitionTimer);
+
+    game.roundAdvanceRoundIndex = completedRoundIndex;
+    game.roundAdvanceRunning = false;
+    game.roundAdvanceAt = Date.now() + 1800;
+
+    const run = () => {
+
+        if (!game || !isHost) return;
+
+        // Игра уже перешла дальше — повторно ничего не делаем.
+        if (
+            game.phase !== "roundResult" ||
+            game.roundIndex !== completedRoundIndex
+        ) {
+            return;
+        }
+
+        // Защита от двойного запуска.
+        if (game.roundAdvanceRunning) return;
+        game.roundAdvanceRunning = true;
+
+        try {
+            if (completedRoundIndex + 1 >= game.roundTotal) {
+                finishCycle();
+            } else {
+                startRound();
+            }
+        } catch (error) {
+            console.error("Ошибка запуска следующего кона:", error);
+            game.roundAdvanceRunning = false;
+
+            // Повторяем попытку, не оставляя игру в roundResult.
+            game.roundTransitionTimer = setTimeout(run, 500);
+        }
+    };
+
+    game.roundTransitionTimer = setTimeout(run, 1800);
+}
+
+
 function finishRound() {
 
-    if (!game) return;
+    if (!game || !isHost) return;
 
-    // Защита от повторного завершения одного и того же кона.
+    // Один и тот же кон нельзя завершить дважды.
     if (game.phase === "roundResult" || game.phase === "finished") {
         return;
     }
@@ -2308,7 +2415,6 @@ function finishRound() {
 
     });
 
-    // Сохраняем результат кона до начала следующего.
     game.roundHistory.push({
         round: game.roundIndex + 1,
         handSize: game.currentHandSize || getCurrentReferenceRoundSize(),
@@ -2319,62 +2425,13 @@ function finishRound() {
         }))
     });
 
-    /*
-        КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
-        таймер следующего кона ставим ДО обновления UI/сети.
+    // Сначала фиксируем следующий переход, затем обновляем UI/сеть.
+    scheduleNextRound();
 
-        Если при отрисовке результата или отправке состояния
-        произойдёт исключение, переход к следующему кону всё равно
-        уже запланирован. Таймер также хранится в game, чтобы не
-        получить двойной запуск.
-    */
-    clearTimeout(game.roundTransitionTimer);
-
-    const finishThisCycle =
-        game.roundIndex + 1 >= game.roundTotal;
-
-    game.roundTransitionTimer = setTimeout(() => {
-
-        if (!game || game.phase !== "roundResult") {
-            return;
-        }
-
-        game.roundTransitionTimer = null;
-
-        try {
-            if (finishThisCycle) {
-                finishCycle();
-            } else {
-                startRound();
-            }
-        } catch (error) {
-            console.error("Ошибка перехода к следующему кону:", error);
-
-            // Не оставляем игру навсегда в roundResult.
-            // Повторяем попытку один раз через секунду.
-            game.roundTransitionTimer = setTimeout(() => {
-                if (!game || game.phase !== "roundResult") return;
-
-                try {
-                    if (finishThisCycle) {
-                        finishCycle();
-                    } else {
-                        startRound();
-                    }
-                } catch (retryError) {
-                    console.error("Повторная ошибка перехода к следующему кону:", retryError);
-                    toast("Не удалось автоматически начать следующий кон. Обновите страницу у ведущего.");
-                }
-            }, 1000);
-        }
-
-    }, 1800);
-
-    // Результат кона показываем уже после установки таймера.
     try {
         sendFullState();
     } catch (error) {
-        console.error("Ошибка отображения результата кона:", error);
+        console.error("Ошибка отправки результата кона:", error);
     }
 }
 
@@ -2416,10 +2473,20 @@ function finishCycle() {
         следующему игроку по кругу.
     */
 
-    game.roundIndex++;
+    // finishCycle вызывается после последнего сыгранного кона,
+    // поэтому номер следующего кона всегда равен числу сыгранных.
+    game.roundIndex = game.roundHistory.length;
 
     game.roundTotal =
         game.roundIndex + 1;
+
+    game.currentHandSize = 6;
+
+    game.lastTrickWinner = null;
+
+    game.roundAdvanceAt = 0;
+    game.roundAdvanceRunning = false;
+    game.roundAdvanceRoundIndex = -1;
 
     /*
         Для дополнительного кона
@@ -2517,10 +2584,20 @@ function renderLobby() {
 
     });
 
-    $("lobbyStatus").textContent =
-        game.players.length < 2
-            ? "Ожидаем второго игрока..."
-            : "Игра начнётся автоматически...";
+    const startBtn = $("startGameBtn");
+
+    startBtn.style.display = isHost ? "block" : "none";
+    startBtn.disabled = game.players.length < 2;
+
+    if (game.players.length < 2) {
+        $("lobbyStatus").textContent = "Ожидаем второго игрока...";
+    } else if (game.players.length >= 4) {
+        $("lobbyStatus").textContent = "Комната заполнена, игра начинается...";
+    } else {
+        $("lobbyStatus").textContent = isHost
+            ? "Когда все соберутся, нажмите «Начать игру»"
+            : "Ведущий скоро начнёт игру...";
+    }
 }
 
 
@@ -2563,7 +2640,7 @@ function renderGame() {
         Кон ${game.roundIndex + 1}
         / ${game.roundTotal}
         <br>
-        по ${handSize} кост${handSize === 1 ? "ь" : "ей"}
+        ${handSize} ${tilesWord(handSize)} на руках
     `;
 
     renderScoreboard();
@@ -2588,7 +2665,6 @@ function renderRoundHistory() {
 
     const body = $("roundHistoryBody");
     const remaining = $("roundHistoryRemaining");
-    const head = $("roundHistoryPlayersHead");
     const note = $("roundHistoryNote");
 
     if (!body || !game) return;
@@ -2597,7 +2673,9 @@ function renderRoundHistory() {
     const history = game.roundHistory || [];
     const sizes = getRoundSizes(players.length);
 
-    const headerRow = head.parentNode;
+    // Колонка «Счёт» заменяется колонками игроков, поэтому строку
+    // заголовка ищем не по её id (после первой отрисовки его уже нет).
+    const headerRow = document.querySelector(".round-history-table thead tr");
 
     while (headerRow.children.length > 2) {
         headerRow.removeChild(headerRow.lastElementChild);
@@ -2629,15 +2707,14 @@ function renderRoundHistory() {
 
         const completed = history.find(h => h.round === index + 1);
 
-        players.forEach(player => {
+        players.forEach((player, playerIndex) => {
 
             const cell = document.createElement("td");
 
             if (completed) {
 
-                const score = completed.scores.find(
-                    s => s.nick === player.nick
-                );
+                // Порядок игроков не меняется после старта, поэтому сверяем по позиции.
+                const score = completed.scores[playerIndex];
 
                 if (score) {
                     const sign = score.roundScore > 0 ? "+" : "";
@@ -2663,17 +2740,15 @@ function renderRoundHistory() {
         body.appendChild(row);
     });
 
-    // Additional 6-tile rounds are added after a tie.
-    const standardFinished =
-        game.roundIndex >= sizes.length - 1;
+    // Дополнительные коны по 6 костей появляются только после ничьей.
+    const tieRows =
+        Math.max(
+            history.filter(h => h.round > sizes.length).length,
+            game.roundIndex - sizes.length + 1,
+            0
+        );
 
-    if (standardFinished && game.phase !== "finished") {
-
-        const tieRows =
-            Math.max(
-                1,
-                history.filter(h => h.round > sizes.length).length + 1
-            );
+    if (tieRows > 0) {
 
         for (let i = 0; i < tieRows; i++) {
 
@@ -2690,17 +2765,19 @@ function renderRoundHistory() {
             c2.textContent = "6";
             row.appendChild(c2);
 
+            if (game.roundIndex === roundNo - 1) {
+                row.classList.add("current-round");
+            }
+
             const completed = history.find(h => h.round === roundNo);
 
-            players.forEach(player => {
+            players.forEach((player, playerIndex) => {
 
                 const cell = document.createElement("td");
 
                 if (completed) {
 
-                    const score = completed.scores.find(
-                        s => s.nick === player.nick
-                    );
+                    const score = completed.scores[playerIndex];
 
                     if (score) {
                         const sign = score.roundScore > 0 ? "+" : "";
@@ -2710,6 +2787,8 @@ function renderRoundHistory() {
                         cell.textContent = "—";
                     }
 
+                } else if (game.roundIndex === roundNo - 1) {
+                    cell.textContent = "•";
                 } else {
                     cell.textContent = "—";
                 }
@@ -2736,10 +2815,15 @@ function renderRoundHistory() {
             `Осталось после текущего: ${left} — ` +
             formatRoundSizes(sizes.slice(game.roundIndex + 1));
 
+    } else if (game.roundIndex === sizes.length - 1) {
+
+        remaining.textContent =
+            "Финальный кон. При ничьей будут дополнительные коны по 6 костей";
+
     } else {
 
         remaining.textContent =
-            "Далее: дополнительные коны по 6 костей до единоличного лидера";
+            "Дополнительный кон по 6 костей: играем до единоличного лидера";
     }
 
     note.textContent =
@@ -2835,7 +2919,7 @@ function renderScoreboard() {
                 </div>
 
                 <div class="small">
-                    ${p.tricks} взят.
+                    ставка ${p.bid === null ? "—" : p.bid} · взято ${p.tricks}
                 </div>
             </div>
         `;
@@ -2879,12 +2963,18 @@ function renderTable() {
                 game.players[game.lastTrickWinner];
 
             message.textContent =
-                `Взятку забирает ${winner.nick} — он ходит следующим`;
+                `Взятку забирает ${winner.nick}. Следующий ход за этим игроком`;
 
         } else {
 
+            const lastWinner =
+                game.lastTrickWinner !== null
+                    ? game.players[game.lastTrickWinner]
+                    : null;
+
             message.textContent =
-                `Ход: ${p.nick}`;
+                `Ход: ${p.nick}` +
+                (lastWinner ? ` · прошлую взятку взял(а) ${lastWinner.nick}` : "");
 
         }
 
@@ -3325,6 +3415,23 @@ $("shareRoomBtn").addEventListener(
 );
 
 
+$("startGameBtn").addEventListener(
+    "click",
+    () => {
+
+        if (!isHost || !game || game.phase !== "lobby") return;
+
+        if (game.players.length < 2) {
+            toast("Нужно минимум 2 игрока");
+            return;
+        }
+
+        startRound();
+
+    }
+);
+
+
 // ------------------------------------------------------------
 // HOME BUTTONS
 // ------------------------------------------------------------
@@ -3465,29 +3572,56 @@ $("newGameBtn").addEventListener(
 
 
 // ------------------------------------------------------------
-// VISUAL UPDATE TIMER
+// ROUND TRANSITION WATCHDOG
 // ------------------------------------------------------------
 
 setInterval(() => {
 
-    if (game) {
+    if (!isHost || !game) return;
 
-        /*
-            Только для плавного обновления UI.
-        */
-
-        if (
-            game.phase !== "lobby" &&
-            game.phase !== "finished"
-        ) {
-
-            render();
-
-        }
-
+    if (
+        game.phase === "roundResult" &&
+        game.roundAdvanceAt > 0 &&
+        Date.now() >= game.roundAdvanceAt
+    ) {
+        // Если основной setTimeout был потерян/прерван,
+        // watchdog гарантированно инициирует переход.
+        scheduleNextRoundWatchdog();
     }
 
-}, 1000);
+}, 500);
+
+
+function scheduleNextRoundWatchdog() {
+
+    if (!isHost || !game) return;
+
+    const completedRoundIndex = game.roundIndex;
+
+    if (
+        game.phase !== "roundResult" ||
+        game.roundAdvanceRoundIndex !== completedRoundIndex
+    ) {
+        return;
+    }
+
+    if (game.roundAdvanceRunning) return;
+
+    game.roundAdvanceRunning = true;
+
+    try {
+        if (completedRoundIndex + 1 >= game.roundTotal) {
+            finishCycle();
+        } else {
+            startRound();
+        }
+    } catch (error) {
+        console.error("Watchdog: ошибка запуска следующего кона:", error);
+        game.roundAdvanceRunning = false;
+        game.roundAdvanceAt = Date.now() + 500;
+    }
+}
+
 
 
 </script>
