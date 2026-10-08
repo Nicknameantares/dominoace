@@ -1165,6 +1165,30 @@ function compareTiles(newTile, oldTile) {
 }
 
 
+/*
+    Правило «ходи в козырь»:
+    если первым во взятке положили козырь (дубль),
+    а у игрока есть козырь — он обязан положить козырь.
+    Если козырей нет — можно любую кость.
+*/
+
+function mustFollowTrump(hand, trick) {
+
+    return Boolean(
+        trick &&
+        trick.length > 0 &&
+        isTrump(trick[0].tile) &&
+        hand.some(isTrump)
+    );
+}
+
+
+function canPlayTile(tile, hand, trick) {
+
+    return !mustFollowTrump(hand, trick) || isTrump(tile);
+}
+
+
 // ------------------------------------------------------------
 // DOMINO HTML
 // ------------------------------------------------------------
@@ -2215,6 +2239,10 @@ function hostReceivePlay(playerId, tileId) {
 
     const tile = player.hand[tileIndex];
 
+    if (!canPlayTile(tile, player.hand, game.trick)) {
+        return;
+    }
+
     player.hand.splice(tileIndex, 1);
 
     game.trick.push({
@@ -2976,6 +3004,14 @@ function renderTable() {
                 `Ход: ${p.nick}` +
                 (lastWinner ? ` · прошлую взятку взял(а) ${lastWinner.nick}` : "");
 
+            if (
+                p.id === myId &&
+                mustFollowTrump(getMyHand(), game.trick)
+            ) {
+                message.textContent +=
+                    " · Первым положили козырь — ходи козырем (дублем)!";
+            }
+
         }
 
     }
@@ -3017,22 +3053,27 @@ function renderTable() {
 // HAND
 // ------------------------------------------------------------
 
+function getMyHand() {
+
+    return isHost
+        ? (
+            game.players.find(
+                p => p.id === myId
+            )?.hand || []
+        )
+        : (
+            game.myHand || []
+        );
+}
+
+
 function renderHand() {
 
     const container = $("myHand");
 
     container.innerHTML = "";
 
-    const hand =
-        isHost
-            ? (
-                game.players.find(
-                    p => p.id === myId
-                )?.hand || []
-            )
-            : (
-                game.myHand || []
-            );
+    const hand = getMyHand();
 
     hand.forEach(tile => {
 
@@ -3043,9 +3084,14 @@ function renderHand() {
             game.phase === "playing" &&
             game.players[game.currentPlayer]?.id === myId;
 
+        const blockedByTrump =
+            isMyTurn &&
+            !canPlayTile(tile, hand, game.trick);
+
         const disabled =
             !isMyTurn ||
-            game.phase !== "playing";
+            game.phase !== "playing" ||
+            blockedByTrump;
 
         wrapper.innerHTML =
             dominoHTML(
@@ -3062,6 +3108,13 @@ function renderHand() {
             domino.addEventListener(
                 "click",
                 () => playTile(tile.id)
+            );
+
+        } else if (blockedByTrump) {
+
+            domino.addEventListener(
+                "click",
+                () => toast("Первым положили козырь — нужно ходить козырем (дублем)")
             );
 
         }
